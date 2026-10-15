@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <title>Socom Nuova Stock</title>
+  <style>
+    /* Stili come prima, mantenuti */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #121e2d; color: white; }
+    header { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
+    h1 { margin: 0; font-size: 2em; color: #00bfff; }
+    #ultimo-aggiornamento { font-size: 0.9em; color: #cccccc; margin-top: 4px; }
+    .filtri { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
+    .filtro { display: flex; flex-direction: column; min-width: 150px; }
+    select { min-height: 80px; background: #f8f8f8; border: 1px solid #ccc; border-radius: 5px; white-space: normal; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; background: white; color: black; table-layout: auto; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+    th { background: #003366; color: white; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+    td { white-space: normal; }
+    tr.highlight { background-color: #fdd !important; }
+    #msg { margin-top: 10px; font-weight: bold; }
+    #filtri-attivi { margin-bottom: 15px; font-style: italic; color: #00cc66; font-weight: bold; }
+    .badge { background: #333; padding: 4px 8px; border-radius: 12px; margin-right: 8px; display: inline-flex; align-items: center; color: #fff; }
+    .badge button { border: none; background: none; margin-left: 6px; cursor: pointer; font-weight: bold; color: #fff; }
+    .toolbar { margin-bottom: 15px; }
+    .toolbar button { margin-right: 10px; padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #0055aa; color: white; border: none; border-radius: 5px; }
+    .toolbar button:hover { background: #004080; }
+	
+@media (max-width: 768px) {
+  .filtri {
+    flex-direction: column;
+  }
+
+  .filtro {
+    min-width: unset;
+    width: 100%;
+  }
+
+  select {
+    min-height: 60px;
+  }
+
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tr {
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: white;
+    color: black;
+    padding: 10px;
+  }
+
+  td {
+    position: relative;
+    padding-left: 50%;
+    text-align: left;
+    border: none;
+    border-bottom: 1px solid #eee;
+  }
+
+  td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    top: 6px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  .toolbar button {
+    margin-bottom: 10px;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 1.4em;
+  }
+}
+
+/* Migliora la separazione delle schede su smartphone */
+@media (max-width: 768px) {
+  tbody tr {
+    margin: 0 0 16px 0;
+    padding: 8px 10px 4px;
+    border: 2px solid #6f8da9;
+    border-left: 6px solid #00a6d6;
+    border-radius: 10px;
+    background: #f7fbff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+  }
+
+  tbody tr:nth-child(even) {
+    background: #eaf3fb;
+  }
+
+  tbody tr.highlight {
+    background: #ffe1e1 !important;
+    border-color: #d9534f;
+    border-left-color: #c62828;
+  }
+
+  tbody td {
+    padding: 10px 6px 10px 48%;
+    border: none;
+    border-bottom: 1px solid #c8d7e5;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  tbody td:last-child {
+    border-bottom: none;
+  }
+
+  tbody td::before {
+    left: 6px;
+    top: 10px;
+    width: 43%;
+    color: #17476e;
+    font-size: 0.92em;
+    line-height: 1.25;
+    white-space: normal;
+  }
+}
+
+#dettagliModal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0; width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+#contenutoDettagli {
+  background-color: #fff;
+  margin: 5% auto;
+  padding: 20px 30px;
+  width: 80%;
+  max-width: 800px;
+  border-radius: 12px;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+#contenutoDettagli h2 {
+  margin-top: 0;
+  font-size: 1.5em;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+}
+
+#contenutoDettagli ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#contenutoDettagli li {
+  padding: 6px 0;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+#contenutoDettagli li strong {
+  width: 40%;
+  text-align: right;
+  padding-right: 12px;
+  color: #333;
+  font-weight: bold;
+}
+
+#contenutoDettagli li span {
+  width: 60%;
+  text-align: left;
+  color: #555;
+}
+
+#contenutoDettagli h3 {
+  margin-top: 20px;
+  font-size: 1.3em;
+  color: #444;
+  border-top: 1px solid #ccc;
+  padding-top: 10px;
+}
+
+#contenutoDettagli .optional-item {
+  padding: 5px 0;
+  border-bottom: 1px dashed #ddd;
+}
+
+.tabella-optional {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.tabella-optional th,
+.tabella-optional td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.tabella-optional th {
+  background-color: #f2f2f2;
+}
+	
+  .modale-doppia-colonna {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .colonna-sinistra, .colonna-destra {
+    flex: 1 1 45%;
+    font-size: 14px;
+  }
+
+  .lista-dettagli {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .lista-dettagli li {
+    margin-bottom: 6px;
+  }
+
+  .tabella-optional {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .tabella-optional th,
+  .tabella-optional td {
+    border: 1px solid #ccc;
+    padding: 6px 8px;
+    text-align: left;
+  }
+
+  .tabella-optional th {
+    background-color: #f4f4f4;
+  }
+
+@media print {
+  .colonna-destra {
+    break-inside: avoid;
+    page-break-inside: avoid; /* per compatibilità */
+  }
+}
+
+.optional-wrapper {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+
+</style>
+
+
+</head>
+<body>
+  <header>
+    <h1>Socom Nuova Stock</h1>
+    <div id="ultimo-aggiornamento">Ultimo aggiornamento: ...</div>
+  </header>
+
+  <main>
+    <div id="filtri-attivi"></div>
+
+    <div class="toolbar">
+      <button onclick="applicaFiltro()">Applica Filtro</button>
+      <button onclick="resettaFiltro()">Reset Filtro</button>
+      <button onclick="caricaDati()">Aggiorna</button>
+    </div>
+
+    <div class="filtri" id="parametri"></div>
+
+    <div id="msg"></div>
+    <div id="tabella-container"></div>
+  </main>
+
+  <script>
+  
+    const BASE_URL = "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/socom_stock";
+	const URL_OPTIONAL = "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/stock_optional";
+    const URL_SCHEDE_PDF = "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/pdf_veicoli.csv";
+
+    const campiEsclusiFiltri = ["data_prenotazione","id_veicolo","VAN","telaio","versione","data_inserimento_ordine","data_arrivo","giorni_giacenza","data_arrivo_prevista","scadenza_prenot","cod_gomme_specifico","descr_gomme_specifico","cod_gomme_generico","descr_gomme_generico","data_ins_OCF","larghezza","listino_originale","prezzo_versione","prezzo_opt","cod_fdp2","aggiornamento_stock","cod_modello_vp","cod_tipologia_allestimento"];
+
+    const campiDate = ["data_prenotazione","data_inserimento_ordine","data_arrivo","data_ins_OCF","data_arrivo_prevista","scadenza_prenot"];
+
+    let intestazione = [], dati = [];
+	let optionalDati = [];
+    let schedePdf = {};
+
+    function formattaData(str) {
+      if (!str) return "";
+      const d = new Date(str);
+      if (isNaN(d)) return str;
+      const gg = String(d.getDate()).padStart(2,'0'),
+            mm = String(d.getMonth()+1).padStart(2,'0'),
+            yyyy = d.getFullYear();
+      return `${gg}/${mm}/${yyyy}`;
+    }
+
+    function caricaDati() {
+      fetch(BASE_URL + "?nocache=" + Date.now())
+        .then(r => r.text())
+        .then(testo => {
+          const righe = testo.trim().split(/\r?\n/);
+          intestazione = righe[0].replaceAll('"','').split(";");
+          dati = righe.slice(1).map(r => {
+            const vals = r.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v=>v.replace(/^"|"$/g,""));
+            const obj = {};
+            intestazione.forEach((k,i)=>obj[k]=vals[i]||"");
+            return obj;
+          });
+
+          let ultimo = dati.find(r => r["aggiornamento_stock"])?.["aggiornamento_stock"] || "";
+          if (ultimo) document.getElementById("ultimo-aggiornamento").textContent = "Ultimo aggiornamento: " + ultimo;
+
+          creaFiltri();
+          mostraTabella(dati);
+          mostraMessaggio(`${dati.length} record trovati`);
+        });
+    }
+	
+
+function caricaOptional() {
+  fetch(URL_OPTIONAL + "?nocache=" + Date.now())
+    .then(r => r.text())
+    .then(text => {
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // rimuove BOM se presente
+
+      const righe = text.trim().split(/\r?\n/);
+      const intestazione = righe[0].replaceAll('"', '').split(";");
+
+      optionalDati = righe.slice(1).map(r => {
+        const valori = r.split(";").map(v => v.replace(/^"|"$/g, ""));
+        const obj = {};
+        intestazione.forEach((col, i) => obj[col] = valori[i] || "");
+        return {
+          codice: obj.optional,
+          descrizione: obj.descrizione,
+          prezzo: obj.prezzo,
+          id_veicolo: obj.id_veicolo
+        };
+      });
+
+      console.log("Optional caricati:", optionalDati.length);
+    })
+    .catch(err => console.error("Errore fetch optional:", err));
+}
+
+function caricaSchedePdf() {
+  return fetch(URL_SCHEDE_PDF + "?nocache=" + Date.now())
+    .then(r => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    })
+    .then(text => {
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const righe = text.trim().split(/\r?\n/);
+      if (righe.length < 2) return;
+      const intestazioniPdf = righe[0].replaceAll('"', '').split(";").map(x => x.trim());
+      const idxId = intestazioniPdf.indexOf("id_veicolo");
+      const idxUrl = intestazioniPdf.indexOf("url_pdf");
+      if (idxId < 0 || idxUrl < 0) throw new Error("Colonne id_veicolo/url_pdf non trovate nel CSV");
+      schedePdf = {};
+      righe.slice(1).forEach(riga => {
+        const campi = riga.split(";").map(v => v.replace(/^"|"$/g, "").trim());
+        const id = campi[idxId];
+        const url = campi[idxUrl];
+        if (id && url && /^https:\/\//i.test(url)) schedePdf[id] = url;
+      });
+      console.log("Schede PDF caricate:", Object.keys(schedePdf).length);
+    })
+    .catch(err => console.error("Errore caricamento schede PDF:", err));
+}
+
+window.onload = () => {
+  caricaDati();
+  caricaOptional();
+  caricaSchedePdf();
+};
+
+
+
+function mostraDettagli(veicolo) {
+  const modal = document.getElementById("dettagliModal");
+  const contenuto = document.getElementById("contenutoDettagli");
+
+  console.log("Veicolo passato a mostraDettagli:", veicolo);
+
+let htmlSinistra = `<h2>Veicolo ID ${veicolo.id_veicolo || "N/D"}</h2><ul class="lista-dettagli">`;
+
+intestazione.forEach(key => {
+  if (key !== "id_veicolo") {
+    let val = veicolo[key];
+    if (campiDate.includes(key)) {
+      val = formattaData(val);
+    }
+    if (!val) val = "—";
+    val = String(val).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    htmlSinistra += `<li><strong>${key}:</strong> <span>${val}</span></li>`;
+  }
+});
+
+htmlSinistra += `</ul>`;
+
+const urlSchedaPdf = schedePdf[String(veicolo.id_veicolo || "").trim()];
+if (urlSchedaPdf) {
+  htmlSinistra += `<p style="margin-top:16px"><a href="${urlSchedaPdf}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 14px;background:#1769aa;color:white;text-decoration:none;border-radius:6px;font-weight:bold">📄 Dettagli allestimento</a></p>`;
+}
+
+
+  // Optional come prima
+  let htmlDestra = "";
+
+  const optional = optionalDati
+    .filter(o => o.id_veicolo === veicolo.id_veicolo)
+    .sort((a, b) => a.codice.localeCompare(b.codice));
+
+  if (optional.length) {
+     htmlDestra += `<h3>Optional:</h3><div class="optional-wrapper"><table class='tabella-optional'><thead><tr><th>Codice</th><th>Descrizione</th><th>Prezzo</th></tr></thead><tbody>`;
+    optional.forEach(opt => {
+      htmlDestra += `<tr><td>${opt.codice}</td><td>${opt.descrizione}</td><td>€${opt.prezzo}</td></tr>`;
+    });
+    htmlDestra += `</tbody></table></div>`;
+  } else {
+    htmlDestra += "<p><em>Nessun optional trovato.</em></p>";
+  }
+
+  const html = `
+    <div class="modale-doppia-colonna">
+      <div class="colonna-sinistra">${htmlSinistra}</div>
+      <div class="colonna-destra">${htmlDestra}</div>
+    </div>
+  `;
+
+  contenuto.innerHTML = html;
+  modal.style.display = "block";
+}
+
+
+
+    function creaFiltri() {
+      const div = document.getElementById("parametri"); div.innerHTML="";
+      intestazione.forEach((col,i) => {
+        if (campiEsclusiFiltri.includes(col)) return;
+        const sel = document.createElement("select");
+        sel.multiple = true;
+        sel.setAttribute("data-col-index", i);
+        [...new Set(dati.map(r=>r[col]).filter(Boolean))].sort().forEach(v=>{
+          const o = document.createElement("option"); o.value=v; o.textContent=v;
+          sel.append(o);
+        });
+        const l = document.createElement("label");
+        l.className="filtro";
+        l.innerHTML=`<strong>${col}</strong>`;
+        l.appendChild(sel);
+        div.appendChild(l);
+      });
+    }
+
+function mostraTabella(arr) {
+  const colonneTabella = [
+    { label: "id_veicolo", campo: "id_veicolo" },
+    { label: "descrizione", campo: "descrizione" },
+    { label: "des_colore", campo: "des_colore" },
+    { label: "VAN", campo: "VAN" },
+    { label: "TELAIO", campo: "TELAIO" },
+    { label: "descri_status", campo: "descri_status" },
+    { label: "stato_avanz_ordine", campo: "stato_avanz_ordine" },
+    { label: "giorni_giacenza", campo: "giorni_giacenza" },
+    { label: "data_arrivo_prevista", campo: "data_arrivo_prevista" },
+    { label: "descr_passo", campo: "descr_passo" },
+    { label: "note", campo: "note" },
+    { label: "tipo_allestimento", campo: "tipo_allestimento" },
+    { label: "Dettagli allestimento", scheda: true },
+    { label: "prezzo_vendita_web", campo: "prezzo_vendita_web" },
+    { label: "prenotato_da", campo: "prenotato_da" },
+    { label: "scadenza_prenot", campo: "scadenza_prenot" },
+    { label: "nota_pren", campo: "nota_pren" }
+  ];
+
+  const campiInGrassetto = new Set([
+    "descrizione", "descri_status", "stato_avanz_ordine",
+    "data_arrivo_prevista", "tipo_allestimento", "prezzo_vendita_web",
+    "prenotato_da", "scadenza_prenot", "nota_pren"
+  ]);
+
+  function chiaveCampo(record, nomeCampo) {
+    if (Object.prototype.hasOwnProperty.call(record, nomeCampo)) return nomeCampo;
+    const nomeMinuscolo = nomeCampo.toLowerCase();
+    return Object.keys(record).find(k => k.toLowerCase() === nomeMinuscolo) || nomeCampo;
+  }
+
+  function formattaPrezzoEuro(valore) {
+    if (valore === null || valore === undefined || String(valore).trim() === "") return "";
+    if (typeof valore === "number") {
+      return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valore);
+    }
+    let testo = String(valore).trim().replace(/€|\s/g, "");
+    // Supporta sia valori italiani (1.234,56) sia valori con decimale inglese (1234.56).
+    if (testo.includes(",")) {
+      testo = testo.replace(/\./g, "").replace(",", ".");
+    }
+    const numero = Number(testo);
+    if (!Number.isFinite(numero)) return String(valore);
+    return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numero);
+  }
+
+  const cont = document.getElementById("tabella-container");
+  const t = document.createElement("table");
+  const thead = document.createElement("thead");
+  const trh = document.createElement("tr");
+  colonneTabella.forEach(col => {
+    const th = document.createElement("th");
+    th.textContent = col.label;
+    trh.appendChild(th);
+  });
+  thead.appendChild(trh);
+  t.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  arr.forEach(r => {
+    const tr = document.createElement("tr");
+    if (r[chiaveCampo(r, "prenotato_da")]?.trim()) tr.classList.add("highlight");
+
+    colonneTabella.forEach(col => {
+      const td = document.createElement("td");
+      td.setAttribute("data-label", col.label);
+
+      if (col.scheda) {
+        const urlSchedaPdf = schedePdf[String(r[chiaveCampo(r, "id_veicolo")] || "").trim()];
+        if (urlSchedaPdf) {
+          const link = document.createElement("a");
+          link.href = urlSchedaPdf;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "📄 Apri";
+          link.title = "Apri dettagli allestimento in una nuova pagina";
+          link.style.cssText = "display:inline-block;padding:5px 9px;background:#1769aa;color:white;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
+          link.addEventListener("click", ev => ev.stopPropagation());
+          td.appendChild(link);
+        } else {
+          td.textContent = "—";
+        }
+      } else {
+        const chiave = chiaveCampo(r, col.campo);
+        let v = r[chiave] || "";
+        if (campiDate.some(c => c.toLowerCase() === col.campo.toLowerCase())) {
+          v = formattaData(v);
+        } else if (col.campo.toLowerCase() === "giorni_giacenza") {
+          v = v ? Math.round(parseFloat(v)).toString() : "";
+        } else if (col.campo.toLowerCase() === "prezzo_vendita_web") {
+          v = formattaPrezzoEuro(v);
+        }
+        td.textContent = v;
+        if (campiInGrassetto.has(col.campo.toLowerCase())) td.style.fontWeight = "bold";
+
+        // Mostra il segnale "Pronta consegna" nella colonna descrizione.
+        if (col.campo.toLowerCase() === "descrizione" && String(r[chiaveCampo(r, "tipo_allestimento")] || "").trim()) {
+          const badge = document.createElement("span");
+          badge.textContent = "Pronta consegna";
+          badge.style.cssText = "display:inline-block;margin-left:7px;padding:3px 6px;background:#16803c;color:#fff;border-radius:4px;font-size:11px;font-weight:bold;white-space:nowrap";
+          td.appendChild(document.createTextNode(" "));
+          td.appendChild(badge);
+        }
+      }
+      tr.appendChild(td);
+    });
+    tr.style.cursor = "pointer";
+    tr.onclick = () => mostraDettagli(r);
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+  cont.innerHTML = "";
+  cont.appendChild(t);
+}
+
+    function mostraMessaggio(txt) { document.getElementById("msg").textContent = txt; }
+
+    // Aggiorna le opzioni di ciascun filtro in base alle selezioni degli ALTRI filtri.
+    // Le selezioni già effettuate vengono mantenute anche se la combinazione restituisce zero risultati.
+    function aggiornaOpzioniFiltri() {
+      const selects = Array.from(document.querySelectorAll(".filtri select"));
+
+      selects.forEach(sel => {
+        const idx = parseInt(sel.getAttribute("data-col-index"), 10);
+        const col = intestazione[idx];
+        const selezionati = Array.from(sel.selectedOptions).map(o => o.value);
+        let compatibili = [...dati];
+
+        selects.forEach(altro => {
+          if (altro === sel) return;
+          const idxAltro = parseInt(altro.getAttribute("data-col-index"), 10);
+          const colAltro = intestazione[idxAltro];
+          const valoriAltro = Array.from(altro.selectedOptions).map(o => o.value);
+          if (valoriAltro.length) {
+            compatibili = compatibili.filter(r => valoriAltro.includes(r[colAltro]));
+          }
+        });
+
+        const valoriDisponibili = new Set(compatibili.map(r => r[col]).filter(v => v !== undefined && v !== null && String(v) !== ""));
+        selezionati.forEach(v => valoriDisponibili.add(v));
+        const ordinati = Array.from(valoriDisponibili).sort((a, b) => String(a).localeCompare(String(b), "it"));
+
+        sel.innerHTML = "";
+        ordinati.forEach(v => {
+          const opzione = document.createElement("option");
+          opzione.value = v;
+          opzione.textContent = v;
+          opzione.selected = selezionati.includes(v);
+          sel.appendChild(opzione);
+        });
+      });
+    }
+
+    function applicaFiltro() {
+      const filtriNodo = document.getElementById("filtri-attivi");
+      filtriNodo.innerHTML = "";
+      let arr = [...dati];
+
+      document.querySelectorAll(".filtri select").forEach(sel => {
+        const idx = parseInt(sel.getAttribute("data-col-index"), 10);
+        const col = intestazione[idx];
+        const selvals = Array.from(sel.selectedOptions).map(o => o.value);
+        if (selvals.length > 0) {
+          arr = arr.filter(r => selvals.includes(r[col]));
+          const badge = document.createElement("span");
+          badge.className = "badge";
+          badge.textContent = `${col}: ${selvals.join(", ")}`;
+          const btn = document.createElement("button");
+          btn.textContent = "×";
+          btn.title = "Rimuovi questo filtro";
+          btn.onclick = () => {
+            selvals.forEach(v => {
+              for (const o of sel.options) if (o.value === v) o.selected = false;
+            });
+            applicaFiltro();
+          };
+          badge.append(btn);
+          filtriNodo.append(badge);
+        }
+      });
+
+      aggiornaOpzioniFiltri();
+      mostraTabella(arr);
+      mostraMessaggio(`${arr.length} record trovati`);
+    }
+
+    function resettaFiltro() {
+      document.querySelectorAll(".filtri select").forEach(s => {
+        Array.from(s.options).forEach(o => o.selected = false);
+      });
+      document.getElementById("filtri-attivi").textContent = "";
+      aggiornaOpzioniFiltri();
+      mostraTabella(dati);
+      mostraMessaggio(`${dati.length} record trovati`);
+    }
+function stampaModale() {
+  const contenuto = document.getElementById('contenutoDettagli').innerHTML;
+
+  const finestraStampa = window.open('', '', 'width=900,height=700');
+  finestraStampa.document.write(`
+    <html>
+      <head>
+        <title>Stampa Dettagli</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 5px;
+            font-size: 10px;
+          }
+          h2, h3 {
+            margin-top: 0;
+          }
+          ul {
+            padding: 0;
+            list-style: none;
+          }
+          li {
+            margin-bottom: 6px;
+          }
+          /* Stile due colonne come la modale */
+          .modale-doppia-colonna {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+			page-break-after: always;
+          }
+          .colonna-sinistra, .colonna-destra {
+            display: inline-block !important;
+			width: 40% !important;
+			vertical-align: top;			
+          }
+		  .colonna-destra {
+			display: inline-block !important;
+			width: 55% !important;
+			vertical-align: top;
+			break-inside: avoid;
+			page-break-inside: avoid;
+		  }
+		            /* Aggiungi altre regole che vuoi replicare */
+        </style>
+      </head>
+      <body>
+        ${contenuto}
+      </body>
+    </html>
+  `);
+  finestraStampa.document.close();
+  finestraStampa.focus();
+  finestraStampa.print();
+}
+
+
+  </script>
+  
+  <div id="dettagliModal" style="display:none; position:fixed; top:10%; left:10%; width:80%; max-height:80vh; overflow-y:auto; background:#fff; border:1px solid #ccc; padding:20px; z-index:9999; border-radius:8px; box-shadow: 0 0 15px rgba(0,0,0,0.3); font-family:Arial, sans-serif;">
+  <button onclick="document.getElementById('dettagliModal').style.display='none'" style="float:right;">Chiudi ×</button>
+  <button onclick="stampaModale()">Stampa veicolo</button>
+  <div id="contenutoDettagli"></div>
+</div>
+
+  
+</body>
+</html>
