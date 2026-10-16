@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accesso Stock Veicoli - Socomnuova</title>
+    <!-- Libreria SHA-256 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .auth-box {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 350px;
+        }
+        .auth-box h2 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 22px;
+        }
+        .auth-box p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .auth-box input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+        }
+        .auth-box button {
+            width: 100%;
+            padding: 12px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .auth-box button:hover {
+            background-color: #0052a3;
+        }
+        .error-msg {
+            color: #d9534f;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-box">
+        <h2>Area Riservata</h2>
+        <p>Stock Veicoli - SOCOM NUOVA</p>
+        <form id="auth-form" onsubmit="gestisciLogin(event)">
+            <input type="text" id="user-input" placeholder="Nome Utente" required autofocus>
+            <input type="password" id="pin-input" placeholder="PIN Personale" required>
+            <button type="submit">Accedi</button>
+            <div id="error-msg" class="error-msg">Credenziali non valide. Riprova.</div>
+        </form>
+    </div>
+
+    <script>
+        // LISTA UTENTI E HASH DEI PIN
+        const UTENTI_AUTORIZZATI = {
+            "mario": "73c683bc2bc2e0c1fdf4d7f573229b4fa4094a45373a002570b240ffbe3a9856", // PIN: 4829
+            "luca": "7209774d758b29be33dfdbd96e5720d20dffdfd7853b0e14bf00f40d1dfae09a",  // PIN: 9132
+            "m.valiante": "9ed142d60c4571b67f1468ef4f75950a60a1d8dc1c38075cd0d13c80fea7aba5" // PIN genius
+        };
+
+        // Se l'utente ha già fatto il login in questa sessione, lo reindirizziamo direttamente all'app
+        window.addEventListener("DOMContentLoaded", () => {
+            if (sessionStorage.getItem("isAuthorized") === "true") {
+                window.location.href = "app.html";
+            }
+        });
+
+        function gestisciLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById("user-input").value.trim().toLowerCase();
+            const pin = document.getElementById("pin-input").value;
+            const errorMsg = document.getElementById("error-msg");
+
+            if (UTENTI_AUTORIZZATI[username]) {
+                const pinHash = CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex).toLowerCase();
+                const hashSalvato = UTENTI_AUTORIZZATI[username].toLowerCase();
+
+                if (pinHash === hashSalvato) {
+                    // Imposta l'autorizzazione di sessione
+                    sessionStorage.setItem("isAuthorized", "true");
+                    // Reindirizza alla pagina reale dei veicoli
+                    window.location.href = "app.html";
+                    return;
+                }
+            }
+
+            // Errore credenziali
+            errorMsg.style.display = "block";
+            document.getElementById("pin-input").value = "";
+            document.getElementById("pin-input").focus();
+        }
+    </script>
+
+</body>
+</html>
