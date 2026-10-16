@@ -1,2 +1,2 @@
 # stockveicoli-socomnuova
-Bozza stock veicoli Socom Nuova
+stock veicoli Socom Nuova
