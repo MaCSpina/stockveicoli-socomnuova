@@ -309,6 +309,14 @@
 
 </head>
 <body>
+
+<script>
+    // Se non è passato dal login, rispediscilo alla pagina principale di autenticazione
+    if (sessionStorage.getItem("isAuthorized") !== "true") {
+        window.location.href = "index.html";
+    }
+</script>
+
   <header>
     <h1>Socom Nuova Stock</h1>
     <div id="ultimo-aggiornamento">Ultimo aggiornamento: ...</div>
