@@ -339,108 +339,41 @@
 
   <script>
   
-    const BASE_URL = "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/socom_stock";
-	const URL_OPTIONAL = "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/stock_optional";
-    const URL_SCHEDE_PDF = "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/pdf_veicoli.csv";
+
+// Variabili iniziali vuote: i link reali vengono caricati in modo sicuro da config.json
+    let BASE_URL = "";
+    let URL_OPTIONAL = "";
+    let URL_SCHEDE_PDF = "";
 
     const campiEsclusiFiltri = ["data_prenotazione","id_veicolo","VAN","telaio","versione","data_inserimento_ordine","data_arrivo","giorni_giacenza","data_arrivo_prevista","scadenza_prenot","cod_gomme_specifico","descr_gomme_specifico","cod_gomme_generico","descr_gomme_generico","data_ins_OCF","larghezza","listino_originale","prezzo_versione","prezzo_opt","cod_fdp2","aggiornamento_stock","cod_modello_vp","cod_tipologia_allestimento"];
-
     const campiDate = ["data_prenotazione","data_inserimento_ordine","data_arrivo","data_ins_OCF","data_arrivo_prevista","scadenza_prenot"];
+    let intestazione = [], dati = []; let optionalDati = []; let schedePdf = {};
 
-    let intestazione = [], dati = [];
-	let optionalDati = [];
-    let schedePdf = {};
+    // Funzione che legge i collegamenti da config.json in modo invisibile nel codice sorgente
+    async function avviaConfigurazione() {
+        try {
+            const res = await fetch("config.json?nocache=" + Date.now());
+            if (!res.ok) throw new Error("Impossibile caricare la configurazione");
+            const config = await res.json();
+            
+            BASE_URL = config.BASE_URL;
+            URL_OPTIONAL = config.URL_OPTIONAL;
+            URL_SCHEDE_PDF = config.URL_SCHEDE_PDF;
 
-    function formattaData(str) {
-      if (!str) return "";
-      const d = new Date(str);
-      if (isNaN(d)) return str;
-      const gg = String(d.getDate()).padStart(2,'0'),
-            mm = String(d.getMonth()+1).padStart(2,'0'),
-            yyyy = d.getFullYear();
-      return `${gg}/${mm}/${yyyy}`;
+            // Ora che abbiamo gli URL, avvia il caricamento dei dati
+            caricaDati();
+            caricaOptional();
+            caricaSchedePdf();
+        } catch (err) {
+            console.error("Errore nel caricamento della configurazione protetta:", err);
+            document.getElementById("msg").textContent = "Errore di connessione ai dati protetti.";
+        }
     }
 
-    function caricaDati() {
-      fetch(BASE_URL + "?nocache=" + Date.now())
-        .then(r => r.text())
-        .then(testo => {
-          const righe = testo.trim().split(/\r?\n/);
-          intestazione = righe[0].replaceAll('"','').split(";");
-          dati = righe.slice(1).map(r => {
-            const vals = r.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v=>v.replace(/^"|"$/g,""));
-            const obj = {};
-            intestazione.forEach((k,i)=>obj[k]=vals[i]||"");
-            return obj;
-          });
-
-          let ultimo = dati.find(r => r["aggiornamento_stock"])?.["aggiornamento_stock"] || "";
-          if (ultimo) document.getElementById("ultimo-aggiornamento").textContent = "Ultimo aggiornamento: " + ultimo;
-
-          creaFiltri();
-          mostraTabella(dati);
-          mostraMessaggio(`${dati.length} record trovati`);
-        });
-    }
-	
-
-function caricaOptional() {
-  fetch(URL_OPTIONAL + "?nocache=" + Date.now())
-    .then(r => r.text())
-    .then(text => {
-      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // rimuove BOM se presente
-
-      const righe = text.trim().split(/\r?\n/);
-      const intestazione = righe[0].replaceAll('"', '').split(";");
-
-      optionalDati = righe.slice(1).map(r => {
-        const valori = r.split(";").map(v => v.replace(/^"|"$/g, ""));
-        const obj = {};
-        intestazione.forEach((col, i) => obj[col] = valori[i] || "");
-        return {
-          codice: obj.optional,
-          descrizione: obj.descrizione,
-          prezzo: obj.prezzo,
-          id_veicolo: obj.id_veicolo
-        };
-      });
-
-      console.log("Optional caricati:", optionalDati.length);
-    })
-    .catch(err => console.error("Errore fetch optional:", err));
-}
-
-function caricaSchedePdf() {
-  return fetch(URL_SCHEDE_PDF + "?nocache=" + Date.now())
-    .then(r => {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.text();
-    })
-    .then(text => {
-      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-      const righe = text.trim().split(/\r?\n/);
-      if (righe.length < 2) return;
-      const intestazioniPdf = righe[0].replaceAll('"', '').split(";").map(x => x.trim());
-      const idxId = intestazioniPdf.indexOf("id_veicolo");
-      const idxUrl = intestazioniPdf.indexOf("url_pdf");
-      if (idxId < 0 || idxUrl < 0) throw new Error("Colonne id_veicolo/url_pdf non trovate nel CSV");
-      schedePdf = {};
-      righe.slice(1).forEach(riga => {
-        const campi = riga.split(";").map(v => v.replace(/^"|"$/g, "").trim());
-        const id = campi[idxId];
-        const url = campi[idxUrl];
-        if (id && url && /^https:\/\//i.test(url)) schedePdf[id] = url;
-      });
-      console.log("Schede PDF caricate:", Object.keys(schedePdf).length);
-    })
-    .catch(err => console.error("Errore caricamento schede PDF:", err));
-}
-
-window.onload = () => {
-  caricaDati();
-  caricaOptional();
-  caricaSchedePdf();
-};
+    // All'avvio della pagina, partiamo caricando la configurazione protetta
+    window.onload = () => {
+        avviaConfigurazione();
+    };
 
 
 
