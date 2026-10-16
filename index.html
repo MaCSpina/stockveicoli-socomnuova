@@ -820,8 +820,20 @@ function stampaModale() {
           @media print {
             body { padding: 0; font-size: 10pt; }
             .modale-doppia-colonna { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12mm; }
-            .colonna-sinistra, .colonna-destra, .optional-wrapper { break-inside: avoid; page-break-inside: avoid; }
+            /* Non bloccare intere colonne/tabelle su una pagina: lascia scorrere gli optional
+               nello spazio disponibile fin dalla prima pagina. Mantieni unite solo le righe. */
+            .colonna-sinistra, .colonna-destra, .optional-wrapper {
+              break-inside: auto !important;
+              page-break-inside: auto !important;
+              min-height: 0;
+              height: auto;
+              overflow: visible;
+            }
+            .tabella-optional { break-inside: auto; page-break-inside: auto; }
+            .tabella-optional thead { display: table-header-group; }
+            .tabella-optional tr { break-inside: avoid; page-break-inside: avoid; }
             h2, h3, .tabella-optional th { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            h3 { break-after: avoid; page-break-after: avoid; }
             a { text-decoration: none; }
           }
         </style>
