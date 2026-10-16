@@ -273,6 +273,37 @@
 }
 
 
+
+/* Scheda veicolo: impaginazione più leggibile su smartphone */
+#dettagliModal {
+  padding: 12px !important;
+  overflow-y: auto !important;
+}
+#dettagliModal > button {
+  border: 0;
+  border-radius: 7px;
+  padding: 10px 14px;
+  margin: 0 0 10px 8px;
+  background: #123e63;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+#dettagliModal > button:first-of-type { background: #667788; }
+@media (max-width: 650px) {
+  #dettagliModal { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; max-height: 100dvh !important; padding: 10px !important; border-radius: 0 !important; }
+  #dettagliModal > button { margin: 0 4px 10px 0; padding: 10px 12px; }
+  #contenutoDettagli { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 14px !important; border-radius: 10px !important; }
+  #contenutoDettagli .modale-doppia-colonna { display: flex; flex-direction: column; gap: 18px; max-height: none; overflow: visible; }
+  #contenutoDettagli .colonna-sinistra, #contenutoDettagli .colonna-destra { width: 100%; flex: 1 1 100%; min-width: 0; font-size: 14px; }
+  #contenutoDettagli h2 { font-size: 1.25em; line-height: 1.3; }
+  #contenutoDettagli li { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); gap: 8px; padding: 9px 0; }
+  #contenutoDettagli li strong { width: auto; text-align: left; padding-right: 0; overflow-wrap: anywhere; }
+  #contenutoDettagli li span { width: auto; overflow-wrap: anywhere; }
+  #contenutoDettagli .tabella-optional { font-size: 12px; table-layout: fixed; }
+  #contenutoDettagli .tabella-optional th, #contenutoDettagli .tabella-optional td { padding: 7px 5px; overflow-wrap: anywhere; }
+}
+
 </style>
 
 
@@ -413,8 +444,15 @@ function mostraDettagli(veicolo) {
 
 let htmlSinistra = `<h2>Veicolo ID ${veicolo.id_veicolo || "N/D"}</h2><ul class="lista-dettagli">`;
 
+const campiDaNascondereDettaglio = new Set([
+  "cod_modello_vp", "famiglia_iveco", "versione", "data_inserimento_ordine",
+  "data_arrivo", "data_prenotazione", "descr_fdp", "cod_fdp",
+  "listino_originale", "prezzo_versione", "prezzo_opt",
+  "cod_tipologia_allestimento", "cod_fdp2", "aggiornamento_stock"
+]);
+
 intestazione.forEach(key => {
-  if (key !== "id_veicolo") {
+  if (key !== "id_veicolo" && !campiDaNascondereDettaglio.has(String(key).toLowerCase())) {
     let val = veicolo[key];
     if (campiDate.includes(key)) {
       val = formattaData(val);
@@ -488,6 +526,7 @@ function mostraTabella(arr) {
     { label: "descrizione", campo: "descrizione" },
     { label: "des_colore", campo: "des_colore" },
     { label: "VAN", campo: "VAN" },
+    { label: "Prenota via WhatsApp", whatsapp: true },
     { label: "TELAIO", campo: "TELAIO" },
     { label: "descri_status", campo: "descri_status" },
     { label: "stato_avanz_ordine", campo: "stato_avanz_ordine" },
@@ -551,7 +590,23 @@ function mostraTabella(arr) {
       const td = document.createElement("td");
       td.setAttribute("data-label", col.label);
 
-      if (col.scheda) {
+      if (col.whatsapp) {
+        const van = String(r[chiaveCampo(r, "VAN")] || "").trim();
+        if (van) {
+          const messaggio = `ciao, mi potresti prenotare il VAN ${van}`;
+          const linkWhatsApp = document.createElement("a");
+          linkWhatsApp.href = `https://wa.me/390812588214?text=${encodeURIComponent(messaggio)}`;
+          linkWhatsApp.target = "_blank";
+          linkWhatsApp.rel = "noopener noreferrer";
+          linkWhatsApp.textContent = "💬 Prenota";
+          linkWhatsApp.title = `Apri WhatsApp con il messaggio: ${messaggio}`;
+          linkWhatsApp.style.cssText = "display:inline-block;padding:6px 9px;background:#25D366;color:#fff;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
+          linkWhatsApp.addEventListener("click", ev => ev.stopPropagation());
+          td.appendChild(linkWhatsApp);
+        } else {
+          td.textContent = "—";
+        }
+      } else if (col.scheda) {
         const urlSchedaPdf = schedePdf[String(r[chiaveCampo(r, "id_veicolo")] || "").trim()];
         if (urlSchedaPdf) {
           const link = document.createElement("a");
@@ -681,58 +736,102 @@ function mostraTabella(arr) {
     }
 function stampaModale() {
   const contenuto = document.getElementById('contenutoDettagli').innerHTML;
-
   const finestraStampa = window.open('', '', 'width=900,height=700');
+  if (!finestraStampa) {
+    alert('Consenti l’apertura della finestra di stampa per proseguire.');
+    return;
+  }
+
   finestraStampa.document.write(`
-    <html>
+    <!DOCTYPE html>
+    <html lang="it">
       <head>
-        <title>Stampa Dettagli</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Scheda veicolo</title>
         <style>
+          * { box-sizing: border-box; }
           body {
-            font-family: Arial, sans-serif;
-            margin: 5px;
-            font-size: 10px;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #243447;
+            background: #fff;
+            margin: 0;
+            padding: 18px;
+            font-size: 14px;
+            line-height: 1.45;
           }
-          h2, h3 {
-            margin-top: 0;
-          }
-          ul {
-            padding: 0;
-            list-style: none;
-          }
-          li {
-            margin-bottom: 6px;
-          }
-          /* Stile due colonne come la modale */
           .modale-doppia-colonna {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-			page-break-after: always;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 18px;
+            align-items: start;
           }
           .colonna-sinistra, .colonna-destra {
-            display: inline-block !important;
-			width: 40% !important;
-			vertical-align: top;			
+            min-width: 0;
+            background: #fff;
           }
-		  .colonna-destra {
-			display: inline-block !important;
-			width: 55% !important;
-			vertical-align: top;
-			break-inside: avoid;
-			page-break-inside: avoid;
-		  }
-		            /* Aggiungi altre regole che vuoi replicare */
+          h2 {
+            margin: 0 0 14px;
+            padding: 0 0 10px;
+            color: #123e63;
+            font-size: 22px;
+            border-bottom: 3px solid #00a6d6;
+          }
+          h3 {
+            margin: 4px 0 12px;
+            padding: 9px 12px;
+            color: #123e63;
+            font-size: 17px;
+            background: #eaf4fb;
+            border-left: 4px solid #00a6d6;
+            border-radius: 4px;
+          }
+          .lista-dettagli { list-style: none; padding: 0; margin: 0; }
+          .lista-dettagli li {
+            display: grid;
+            grid-template-columns: minmax(115px, 42%) minmax(0, 1fr);
+            gap: 10px;
+            padding: 8px 10px;
+            margin: 0;
+            border-bottom: 1px solid #e4ebf0;
+            overflow-wrap: anywhere;
+          }
+          .lista-dettagli li:nth-child(even) { background: #f5f9fc; }
+          .lista-dettagli li strong { color: #34546d; text-align: left; }
+          .lista-dettagli li span { color: #172b3a; text-align: left; }
+          .tabella-optional { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+          .tabella-optional th, .tabella-optional td {
+            border: 1px solid #d6e0e8;
+            padding: 8px;
+            text-align: left;
+            overflow-wrap: anywhere;
+          }
+          .tabella-optional th { background: #123e63; color: #fff; }
+          .tabella-optional tbody tr:nth-child(even) { background: #f5f9fc; }
+          a { color: #075b96; }
+          @media (max-width: 650px) {
+            body { padding: 10px; font-size: 14px; }
+            .modale-doppia-colonna { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+            h2 { font-size: 20px; }
+            .lista-dettagli li { grid-template-columns: minmax(0, 40%) minmax(0, 1fr); gap: 8px; padding: 9px 7px; }
+            .tabella-optional { font-size: 12px; }
+            .tabella-optional th, .tabella-optional td { padding: 6px 5px; }
+          }
+          @media print {
+            body { padding: 0; font-size: 10pt; }
+            .modale-doppia-colonna { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12mm; }
+            .colonna-sinistra, .colonna-destra, .optional-wrapper { break-inside: avoid; page-break-inside: avoid; }
+            h2, h3, .tabella-optional th { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            a { text-decoration: none; }
+          }
         </style>
       </head>
-      <body>
-        ${contenuto}
-      </body>
+      <body>${contenuto}</body>
     </html>
   `);
   finestraStampa.document.close();
   finestraStampa.focus();
-  finestraStampa.print();
+  setTimeout(() => finestraStampa.print(), 300);
 }
 
 
