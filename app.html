@@ -6,7 +6,7 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <title>Socom Nuova Stock</title>
   <style>
-    /* Stili come prima, mantenuti */
+    /* Stili generali */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #121e2d; color: white; }
     header { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
     h1 { margin: 0; font-size: 2em; color: #00bfff; }
@@ -19,7 +19,13 @@
     th { background: #003366; color: white; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
     td { white-space: normal; }
     tr.highlight { background-color: #fdd !important; }
-    #msg { margin-top: 10px; font-weight: bold; }
+    
+    /* Area messaggi e pulsante riepilogo in alto */
+    .status-bar { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+    #msg { font-weight: bold; color: #fff; }
+    .btn-riepilogo { padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #16803c; color: white; border: none; border-radius: 5px; font-weight: bold; }
+    .btn-riepilogo:hover { background: #126530; }
+
     #filtri-attivi { margin-bottom: 15px; font-style: italic; color: #00cc66; font-weight: bold; }
     .badge { background: #333; padding: 4px 8px; border-radius: 12px; margin-right: 8px; display: inline-flex; align-items: center; color: #fff; }
     .badge button { border: none; background: none; margin-left: 6px; cursor: pointer; font-weight: bold; color: #fff; }
@@ -28,290 +34,64 @@
     .toolbar button:hover { background: #004080; }
 	
 @media (max-width: 768px) {
-  .filtri {
-    flex-direction: column;
-  }
-
-  .filtro {
-    min-width: unset;
-    width: 100%;
-  }
-
-  select {
-    min-height: 60px;
-  }
-
-  table, thead, tbody, th, td, tr {
-    display: block;
-  }
-
-  thead {
-    display: none;
-  }
-
-  tr {
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background: white;
-    color: black;
-    padding: 10px;
-  }
-
-  td {
-    position: relative;
-    padding-left: 50%;
-    text-align: left;
-    border: none;
-    border-bottom: 1px solid #eee;
-  }
-
-  td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 10px;
-    top: 6px;
-    font-weight: bold;
-    white-space: nowrap;
-  }
+  .filtri { flex-direction: column; }
+  .filtro { min-width: unset; width: 100%; }
+  select { min-height: 60px; }
+  table, thead, tbody, th, td, tr { display: block; }
+  thead { display: none; }
+  tr { margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; background: white; color: black; padding: 10px; }
+  td { position: relative; padding-left: 50%; text-align: left; border: none; border-bottom: 1px solid #eee; }
+  td::before { content: attr(data-label); position: absolute; left: 10px; top: 6px; font-weight: bold; white-space: nowrap; }
 }
 
 @media (max-width: 480px) {
-  body {
-    padding: 10px;
-  }
-
-  .toolbar button {
-    margin-bottom: 10px;
-    width: 100%;
-  }
-
-  h1 {
-    font-size: 1.4em;
-  }
+  body { padding: 10px; }
+  .toolbar button { margin-bottom: 10px; width: 100%; }
+  h1 { font-size: 1.4em; }
 }
 
-/* Migliora la separazione delle schede su smartphone */
 @media (max-width: 768px) {
-  tbody tr {
-    margin: 0 0 16px 0;
-    padding: 8px 10px 4px;
-    border: 2px solid #6f8da9;
-    border-left: 6px solid #00a6d6;
-    border-radius: 10px;
-    background: #f7fbff;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
-  }
-
-  tbody tr:nth-child(even) {
-    background: #eaf3fb;
-  }
-
-  tbody tr.highlight {
-    background: #ffe1e1 !important;
-    border-color: #d9534f;
-    border-left-color: #c62828;
-  }
-
-  tbody td {
-    padding: 10px 6px 10px 48%;
-    border: none;
-    border-bottom: 1px solid #c8d7e5;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-  }
-
-  tbody td:last-child {
-    border-bottom: none;
-  }
-
-  tbody td::before {
-    left: 6px;
-    top: 10px;
-    width: 43%;
-    color: #17476e;
-    font-size: 0.92em;
-    line-height: 1.25;
-    white-space: normal;
-  }
+  tbody tr { margin: 0 0 16px 0; padding: 8px 10px 4px; border: 2px solid #6f8da9; border-left: 6px solid #00a6d6; border-radius: 10px; background: #f7fbff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22); }
+  tbody tr:nth-child(even) { background: #eaf3fb; }
+  tbody tr.highlight { background: #ffe1e1 !important; border-color: #d9534f; border-left-color: #c62828; }
+  tbody td { padding: 10px 6px 10px 48%; border: none; border-bottom: 1px solid #c8d7e5; line-height: 1.35; overflow-wrap: anywhere; }
+  tbody td:last-child { border-bottom: none; }
+  tbody td::before { left: 6px; top: 10px; width: 43%; color: #17476e; font-size: 0.92em; line-height: 1.25; white-space: normal; }
 }
 
-#dettagliModal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0; top: 0; width: 100%; height: 100%;
+/* Modali generali */
+.modal-overlay {
+  display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
   background-color: rgba(0,0,0,0.5);
 }
-
-#contenutoDettagli {
-  background-color: #fff;
-  margin: 5% auto;
-  padding: 20px 30px;
-  width: 80%;
-  max-width: 800px;
-  border-radius: 12px;
-  font-family: Arial, sans-serif;
-  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+.modal-content {
+  background-color: #fff; margin: 5% auto; padding: 20px 30px; width: 80%;
+  max-width: 900px; border-radius: 12px; font-family: Arial, sans-serif;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2); color: #333; max-height: 80vh; overflow-y: auto;
 }
+.modal-content h2 { margin-top: 0; font-size: 1.5em; border-bottom: 1px solid #ccc; padding-bottom: 10px; color: #123e63; }
+.modal-content ul { list-style: none; padding: 0; margin: 0; }
+.modal-content li { padding: 6px 0; display: flex; justify-content: space-between; border-bottom: 1px solid #f0f0f0; }
+.modal-content li strong { width: 40%; text-align: right; padding-right: 12px; color: #333; font-weight: bold; }
+.modal-content li span { width: 60%; text-align: left; color: #555; }
+.modal-content h3 { margin-top: 20px; font-size: 1.3em; color: #444; border-top: 1px solid #ccc; padding-top: 10px; }
 
-#contenutoDettagli h2 {
-  margin-top: 0;
-  font-size: 1.5em;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 10px;
+.tabella-optional, .tabella-riepilogo {
+  width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;
 }
-
-#contenutoDettagli ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.tabella-optional th, .tabella-optional td, .tabella-riepilogo th, .tabella-riepilogo td {
+  border: 1px solid #ddd; padding: 8px; text-align: left; color: #333;
 }
+.tabella-optional th, .tabella-riepilogo th { background-color: #003366; color: #ffffff; }
 
-#contenutoDettagli li {
-  padding: 6px 0;
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-#contenutoDettagli li strong {
-  width: 40%;
-  text-align: right;
-  padding-right: 12px;
-  color: #333;
-  font-weight: bold;
-}
-
-#contenutoDettagli li span {
-  width: 60%;
-  text-align: left;
-  color: #555;
-}
-
-#contenutoDettagli h3 {
-  margin-top: 20px;
-  font-size: 1.3em;
-  color: #444;
-  border-top: 1px solid #ccc;
-  padding-top: 10px;
-}
-
-#contenutoDettagli .optional-item {
-  padding: 5px 0;
-  border-bottom: 1px dashed #ddd;
-}
-
-.tabella-optional {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 14px;
-}
-
-.tabella-optional th,
-.tabella-optional td {
-  border: 1px solid #ddd;
-  padding: 6px 8px;
-  text-align: left;
-}
-
-.tabella-optional th {
-  background-color: #f2f2f2;
-}
-	
-  .modale-doppia-colonna {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-
-  .colonna-sinistra, .colonna-destra {
-    flex: 1 1 45%;
-    font-size: 14px;
-  }
-
-  .lista-dettagli {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .lista-dettagli li {
-    margin-bottom: 6px;
-  }
-
-  .tabella-optional {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  .tabella-optional th,
-  .tabella-optional td {
-    border: 1px solid #ccc;
-    padding: 6px 8px;
-    text-align: left;
-  }
-
-  .tabella-optional th {
-    background-color: #f4f4f4;
-  }
-
-@media print {
-  .colonna-destra {
-    break-inside: avoid;
-    page-break-inside: avoid; /* per compatibilità */
-  }
-}
-
-.optional-wrapper {
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
-
-
-/* Scheda veicolo: impaginazione più leggibile su smartphone */
-#dettagliModal {
-  padding: 12px !important;
-  overflow-y: auto !important;
-}
-#dettagliModal > button {
-  border: 0;
-  border-radius: 7px;
-  padding: 10px 14px;
-  margin: 0 0 10px 8px;
-  background: #123e63;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-}
-#dettagliModal > button:first-of-type { background: #667788; }
-@media (max-width: 650px) {
-  #dettagliModal { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; max-height: 100dvh !important; padding: 10px !important; border-radius: 0 !important; }
-  #dettagliModal > button { margin: 0 4px 10px 0; padding: 10px 12px; }
-  #contenutoDettagli { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 14px !important; border-radius: 10px !important; }
-  #contenutoDettagli .modale-doppia-colonna { display: flex; flex-direction: column; gap: 18px; max-height: none; overflow: visible; }
-  #contenutoDettagli .colonna-sinistra, #contenutoDettagli .colonna-destra { width: 100%; flex: 1 1 100%; min-width: 0; font-size: 14px; }
-  #contenutoDettagli h2 { font-size: 1.25em; line-height: 1.3; }
-  #contenutoDettagli li { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); gap: 8px; padding: 9px 0; }
-  #contenutoDettagli li strong { width: auto; text-align: left; padding-right: 0; overflow-wrap: anywhere; }
-  #contenutoDettagli li span { width: auto; overflow-wrap: anywhere; }
-  #contenutoDettagli .tabella-optional { font-size: 12px; table-layout: fixed; }
-  #contenutoDettagli .tabella-optional th, #contenutoDettagli .tabella-optional td { padding: 7px 5px; overflow-wrap: anywhere; }
-}
-
-</style>
-
-
+.modale-doppia-colonna { display: flex; flex-wrap: wrap; gap: 20px; max-height: 80vh; overflow-y: auto; }
+.colonna-sinistra, .colonna-destra { flex: 1 1 45%; font-size: 14px; }
+.optional-wrapper { break-inside: avoid; page-break-inside: avoid; }
+  </style>
 </head>
 <body>
 
 <script>
-    // Se non è passato dal login, rispediscilo alla pagina principale di autenticazione
     if (sessionStorage.getItem("isAuthorized") !== "true") {
         window.location.href = "index.html";
     }
@@ -323,29 +103,32 @@
   </header>
 
   <main>
-    <div id="filtri-attivi"></div>
-
     <div class="toolbar">
       <button onclick="applicaFiltro()">Applica Filtro</button>
       <button onclick="resettaFiltro()">Reset Filtro</button>
       <button onclick="caricaDati()">Aggiorna</button>
     </div>
 
-    <div class="filtri" id="parametri"></div>
+    <!-- Record trovati e pulsante Riepilogo -->
+    <div class="status-bar">
+      <div id="msg"></div>
+      <button class="btn-riepilogo" onclick="apriRiepilogo()">📊 Riepilogo Stock</button>
+    </div>
 
-    <div id="msg"></div>
+    <div id="filtri-attivi"></div>
+    <div class="filtri" id="parametri"></div>
     <div id="tabella-container"></div>
   </main>
 
   <script>
-  
-let BASE_URL = "";
+    let BASE_URL = "";
     let URL_OPTIONAL = "";
     let URL_SCHEDE_PDF = "";
 
     const campiEsclusiFiltri = ["data_prenotazione","id_veicolo","VAN","telaio","versione","data_inserimento_ordine","data_arrivo","giorni_giacenza","data_arrivo_prevista","scadenza_prenot","cod_gomme_specifico","descr_gomme_specifico","cod_gomme_generico","descr_gomme_generico","data_ins_OCF","larghezza","listino_originale","prezzo_versione","prezzo_opt","cod_fdp2","aggiornamento_stock","cod_modello_vp","cod_tipologia_allestimento"];
     const campiDate = ["data_prenotazione","data_inserimento_ordine","data_arrivo","data_ins_OCF","data_arrivo_prevista","scadenza_prenot"];
-    let intestazione = [], dati = []; let optionalDati = []; let schedePdf = {};
+    let intestazione = [], dati = [], datiCorrenti = []; 
+    let optionalDati = []; let schedePdf = {};
 
     function formattaData(str) {
       if (!str) return "";
@@ -357,82 +140,106 @@ let BASE_URL = "";
       return `${gg}/${mm}/${yyyy}`;
     }
 
+    // Helper per trovare le chiavi trascurando maiuscole/minuscole
+    function chiaveCampo(record, nomeCampo) {
+      if (!record) return nomeCampo;
+      if (Object.prototype.hasOwnProperty.call(record, nomeCampo)) return nomeCampo;
+      const nomeMinuscolo = nomeCampo.toLowerCase();
+      return Object.keys(record).find(k => k.toLowerCase() === nomeMinuscolo) || nomeCampo;
+    }
+
+    // Pulizia completa di stringhe (rimuove virgolette residue ed eventuali spazi attorno)
+    function pulisciTesto(str) {
+      if (!str) return "";
+      return String(str).replace(/^"+|"+$/g, '').trim();
+    }
+
     function caricaDati() {
       fetch(BASE_URL + "?nocache=" + Date.now())
         .then(r => r.text())
         .then(testo => {
-          const righe = testo.trim().split(/\r?\n/);
-          intestazione = righe[0].replaceAll('"','').split(";");
-          dati = righe.slice(1).map(r => {
-            const vals = r.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v=>v.replace(/^"|"$/g,""));
-            const obj = {};
-            intestazione.forEach((k,i)=>obj[k]=vals[i]||"");
-            return obj;
+          // Uso di PapaParse per rimuovere nativamente qualsiasi virgoletta dal CSV
+          const parsed = Papa.parse(testo.trim(), {
+            delimiter: ";",
+            header: true,
+            skipEmptyLines: true
           });
 
-          let ultimo = dati.find(r => r["aggiornamento_stock"])?.["aggiornamento_stock"] || "";
+          if (parsed.meta && parsed.meta.fields) {
+            intestazione = parsed.meta.fields.map(pulisciTesto);
+          } else {
+            intestazione = [];
+          }
+
+          dati = parsed.data.map(row => {
+            const newObj = {};
+            Object.keys(row).forEach(k => {
+              newObj[pulisciTesto(k)] = pulisciTesto(row[k]);
+            });
+            return newObj;
+          });
+
+          let ultimo = dati.find(r => r[chiaveCampo(r, "aggiornamento_stock")])?.[chiaveCampo(dati[0], "aggiornamento_stock")] || "";
           if (ultimo) document.getElementById("ultimo-aggiornamento").textContent = "Ultimo aggiornamento: " + ultimo;
 
           creaFiltri();
-          mostraTabella(dati);
-          mostraMessaggio(`${dati.length} record trovati`);
+          datiCorrenti = [...dati];
+          mostraTabella(datiCorrenti);
+          mostraMessaggio(`${datiCorrenti.length} record trovati`);
         });
     }
 	
+    function caricaOptional() {
+      fetch(URL_OPTIONAL + "?nocache=" + Date.now())
+        .then(r => r.text())
+        .then(text => {
+          if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+          const parsed = Papa.parse(text.trim(), {
+            delimiter: ";",
+            header: true,
+            skipEmptyLines: true
+          });
 
-function caricaOptional() {
-  fetch(URL_OPTIONAL + "?nocache=" + Date.now())
-    .then(r => r.text())
-    .then(text => {
-      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // rimuove BOM se presente
+          optionalDati = parsed.data.map(row => {
+            const obj = {};
+            Object.keys(row).forEach(k => obj[pulisciTesto(k)] = pulisciTesto(row[k]));
+            return {
+              codice: obj.optional || "",
+              descrizione: obj.descrizione || "",
+              prezzo: obj.prezzo || "",
+              id_veicolo: obj.id_veicolo || ""
+            };
+          });
+        })
+        .catch(err => console.error("Errore fetch optional:", err));
+    }
 
-      const righe = text.trim().split(/\r?\n/);
-      const intestazione = righe[0].replaceAll('"', '').split(";");
+    function caricaSchedePdf() {
+      return fetch(URL_SCHEDE_PDF + "?nocache=" + Date.now())
+        .then(r => {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.text();
+        })
+        .then(text => {
+          if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+          const parsed = Papa.parse(text.trim(), {
+            delimiter: ";",
+            header: true,
+            skipEmptyLines: true
+          });
 
-      optionalDati = righe.slice(1).map(r => {
-        const valori = r.split(";").map(v => v.replace(/^"|"$/g, ""));
-        const obj = {};
-        intestazione.forEach((col, i) => obj[col] = valori[i] || "");
-        return {
-          codice: obj.optional,
-          descrizione: obj.descrizione,
-          prezzo: obj.prezzo,
-          id_veicolo: obj.id_veicolo
-        };
-      });
+          schedePdf = {};
+          parsed.data.forEach(row => {
+            const id = pulisciTesto(row["id_veicolo"]);
+            const url = pulisciTesto(row["url_pdf"]);
+            if (id && url && /^https:\/\//i.test(url)) {
+              schedePdf[id] = url;
+            }
+          });
+        })
+        .catch(err => console.error("Errore caricamento schede PDF:", err));
+    }
 
-      console.log("Optional caricati:", optionalDati.length);
-    })
-    .catch(err => console.error("Errore fetch optional:", err));
-}
-
-function caricaSchedePdf() {
-  return fetch(URL_SCHEDE_PDF + "?nocache=" + Date.now())
-    .then(r => {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.text();
-    })
-    .then(text => {
-      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-      const righe = text.trim().split(/\r?\n/);
-      if (righe.length < 2) return;
-      const intestazioniPdf = righe[0].replaceAll('"', '').split(";").map(x => x.trim());
-      const idxId = intestazioniPdf.indexOf("id_veicolo");
-      const idxUrl = intestazioniPdf.indexOf("url_pdf");
-      if (idxId < 0 || idxUrl < 0) throw new Error("Colonne id_veicolo/url_pdf non trovate nel CSV");
-      schedePdf = {};
-      righe.slice(1).forEach(riga => {
-        const campi = riga.split(";").map(v => v.replace(/^"|"$/g, "").trim());
-        const id = campi[idxId];
-        const url = campi[idxUrl];
-        if (id && url && /^https:\/\//i.test(url)) schedePdf[id] = url;
-      });
-      console.log("Schede PDF caricate:", Object.keys(schedePdf).length);
-    })
-    .catch(err => console.error("Errore caricamento schede PDF:", err));
-}
-
-// Funzione che legge i collegamenti da config.json in modo sicuro
     async function avviaConfigurazione() {
         try {
             const res = await fetch("config.json?nocache=" + Date.now());
@@ -443,7 +250,6 @@ function caricaSchedePdf() {
             URL_OPTIONAL = config.URL_OPTIONAL;
             URL_SCHEDE_PDF = config.URL_SCHEDE_PDF;
 
-            // Ora le funzioni esistono e possono essere chiamate senza errori!
             caricaDati();
             caricaOptional();
             caricaSchedePdf();
@@ -453,77 +259,56 @@ function caricaSchedePdf() {
         }
     }
 
-    // All'avvio della pagina, partiamo caricando la configurazione protetta
     window.onload = () => {
         avviaConfigurazione();
     };
 
+    function mostraDettagli(veicolo) {
+      const modal = document.getElementById("dettagliModal");
+      const contenuto = document.getElementById("contenutoDettagli");
 
+      let htmlSinistra = `<h2>Veicolo ID ${veicolo.id_veicolo || "N/D"}</h2><ul class="lista-dettagli">`;
+      const campiDaNascondereDettaglio = new Set([
+        "cod_modello_vp", "famiglia_iveco", "versione", "data_inserimento_ordine",
+        "data_arrivo", "data_prenotazione", "descr_fdp", "cod_fdp",
+        "listino_originale", "prezzo_versione", "prezzo_opt",
+        "cod_tipologia_allestimento", "cod_fdp2", "aggiornamento_stock"
+      ]);
 
-function mostraDettagli(veicolo) {
-  const modal = document.getElementById("dettagliModal");
-  const contenuto = document.getElementById("contenutoDettagli");
+      intestazione.forEach(key => {
+        if (key !== "id_veicolo" && !campiDaNascondereDettaglio.has(String(key).toLowerCase())) {
+          let val = veicolo[key];
+          if (campiDate.includes(key)) val = formattaData(val);
+          if (!val) val = "—";
+          val = String(val).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          htmlSinistra += `<li><strong>${key}:</strong> <span>${val}</span></li>`;
+        }
+      });
+      htmlSinistra += `</ul>`;
 
-  console.log("Veicolo passato a mostraDettagli:", veicolo);
+      const urlSchedaPdf = schedePdf[String(veicolo.id_veicolo || "").trim()];
+      if (urlSchedaPdf) {
+        htmlSinistra += `<p style="margin-top:16px"><a href="${urlSchedaPdf}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 14px;background:#1769aa;color:white;text-decoration:none;border-radius:6px;font-weight:bold">📄 Dettagli allestimento</a></p>`;
+      }
 
-let htmlSinistra = `<h2>Veicolo ID ${veicolo.id_veicolo || "N/D"}</h2><ul class="lista-dettagli">`;
+      let htmlDestra = "";
+      const optional = optionalDati
+        .filter(o => o.id_veicolo === veicolo.id_veicolo)
+        .sort((a, b) => a.codice.localeCompare(b.codice));
 
-const campiDaNascondereDettaglio = new Set([
-  "cod_modello_vp", "famiglia_iveco", "versione", "data_inserimento_ordine",
-  "data_arrivo", "data_prenotazione", "descr_fdp", "cod_fdp",
-  "listino_originale", "prezzo_versione", "prezzo_opt",
-  "cod_tipologia_allestimento", "cod_fdp2", "aggiornamento_stock"
-]);
+      if (optional.length) {
+         htmlDestra += `<h3>Optional:</h3><div class="optional-wrapper"><table class='tabella-optional'><thead><tr><th>Codice</th><th>Descrizione</th><th>Prezzo</th></tr></thead><tbody>`;
+        optional.forEach(opt => {
+          htmlDestra += `<tr><td>${opt.codice}</td><td>${opt.descrizione}</td><td>€${opt.prezzo}</td></tr>`;
+        });
+        htmlDestra += `</tbody></table></div>`;
+      } else {
+        htmlDestra += "<p><em>Nessun optional trovato.</em></p>";
+      }
 
-intestazione.forEach(key => {
-  if (key !== "id_veicolo" && !campiDaNascondereDettaglio.has(String(key).toLowerCase())) {
-    let val = veicolo[key];
-    if (campiDate.includes(key)) {
-      val = formattaData(val);
+      contenuto.innerHTML = `<div class="modale-doppia-colonna"><div class="colonna-sinistra">${htmlSinistra}</div><div class="colonna-destra">${htmlDestra}</div></div>`;
+      modal.style.display = "block";
     }
-    if (!val) val = "—";
-    val = String(val).replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    htmlSinistra += `<li><strong>${key}:</strong> <span>${val}</span></li>`;
-  }
-});
-
-htmlSinistra += `</ul>`;
-
-const urlSchedaPdf = schedePdf[String(veicolo.id_veicolo || "").trim()];
-if (urlSchedaPdf) {
-  htmlSinistra += `<p style="margin-top:16px"><a href="${urlSchedaPdf}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 14px;background:#1769aa;color:white;text-decoration:none;border-radius:6px;font-weight:bold">📄 Dettagli allestimento</a></p>`;
-}
-
-
-  // Optional come prima
-  let htmlDestra = "";
-
-  const optional = optionalDati
-    .filter(o => o.id_veicolo === veicolo.id_veicolo)
-    .sort((a, b) => a.codice.localeCompare(b.codice));
-
-  if (optional.length) {
-     htmlDestra += `<h3>Optional:</h3><div class="optional-wrapper"><table class='tabella-optional'><thead><tr><th>Codice</th><th>Descrizione</th><th>Prezzo</th></tr></thead><tbody>`;
-    optional.forEach(opt => {
-      htmlDestra += `<tr><td>${opt.codice}</td><td>${opt.descrizione}</td><td>€${opt.prezzo}</td></tr>`;
-    });
-    htmlDestra += `</tbody></table></div>`;
-  } else {
-    htmlDestra += "<p><em>Nessun optional trovato.</em></p>";
-  }
-
-  const html = `
-    <div class="modale-doppia-colonna">
-      <div class="colonna-sinistra">${htmlSinistra}</div>
-      <div class="colonna-destra">${htmlDestra}</div>
-    </div>
-  `;
-
-  contenuto.innerHTML = html;
-  modal.style.display = "block";
-}
-
-
 
     function creaFiltri() {
       const div = document.getElementById("parametri"); div.innerHTML="";
@@ -544,147 +329,135 @@ if (urlSchedaPdf) {
       });
     }
 
-function mostraTabella(arr) {
-  const colonneTabella = [
-    { label: "id_veicolo", campo: "id_veicolo" },
-    { label: "descrizione", campo: "descrizione" },
-    { label: "des_colore", campo: "des_colore" },
-    { label: "VAN", campo: "VAN" },
-    { label: "Prenota via WhatsApp", whatsapp: true },
-    { label: "TELAIO", campo: "TELAIO" },
-    { label: "descri_status", campo: "descri_status" },
-    { label: "stato_avanz_ordine", campo: "stato_avanz_ordine" },
-    { label: "giorni_giacenza", campo: "giorni_giacenza" },
-    { label: "data_arrivo_prevista", campo: "data_arrivo_prevista" },
-    { label: "descr_passo", campo: "descr_passo" },
-    { label: "note", campo: "note" },
-    { label: "tipo_allestimento", campo: "tipo_allestimento" },
-    { label: "Dettagli allestimento", scheda: true },
-    { label: "prezzo_vendita_web", campo: "prezzo_vendita_web" },
-    { label: "prenotato_da", campo: "prenotato_da" },
-    { label: "scadenza_prenot", campo: "scadenza_prenot" },
-    { label: "nota_pren", campo: "nota_pren" }
-  ];
+    function mostraTabella(arr) {
+      datiCorrenti = arr; 
+      const colonneTabella = [
+        { label: "id_veicolo", campo: "id_veicolo" },
+        { label: "descrizione", campo: "descrizione" },
+        { label: "des_colore", campo: "des_colore" },
+        { label: "VAN", campo: "VAN" },
+        { label: "Prenota via WhatsApp", whatsapp: true },
+        { label: "TELAIO", campo: "TELAIO" },
+        { label: "descri_status", campo: "descri_status" },
+        { label: "stato_avanz_ordine", campo: "stato_avanz_ordine" },
+        { label: "giorni_giacenza", campo: "giorni_giacenza" },
+        { label: "data_arrivo_prevista", campo: "data_arrivo_prevista" },
+        { label: "descr_passo", campo: "descr_passo" },
+        { label: "note", campo: "note" },
+        { label: "tipo_allestimento", campo: "tipo_allestimento" },
+        { label: "Dettagli allestimento", scheda: true },
+        { label: "prezzo_vendita_web", campo: "prezzo_vendita_web" },
+        { label: "prenotato_da", campo: "prenotato_da" },
+        { label: "scadenza_prenot", campo: "scadenza_prenot" },
+        { label: "nota_pren", campo: "nota_pren" }
+      ];
 
-  const campiInGrassetto = new Set([
-    "descrizione", "descri_status", "stato_avanz_ordine",
-    "data_arrivo_prevista", "tipo_allestimento", "prezzo_vendita_web",
-    "prenotato_da", "scadenza_prenot", "nota_pren"
-  ]);
+      const campiInGrassetto = new Set([
+        "descrizione", "descri_status", "stato_avanz_ordine",
+        "data_arrivo_prevista", "tipo_allestimento", "prezzo_vendita_web",
+        "prenotato_da", "scadenza_prenot", "nota_pren"
+      ]);
 
-  function chiaveCampo(record, nomeCampo) {
-    if (Object.prototype.hasOwnProperty.call(record, nomeCampo)) return nomeCampo;
-    const nomeMinuscolo = nomeCampo.toLowerCase();
-    return Object.keys(record).find(k => k.toLowerCase() === nomeMinuscolo) || nomeCampo;
-  }
-
-  function formattaPrezzoEuro(valore) {
-    if (valore === null || valore === undefined || String(valore).trim() === "") return "";
-    if (typeof valore === "number") {
-      return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valore);
-    }
-    let testo = String(valore).trim().replace(/€|\s/g, "");
-    // Supporta sia valori italiani (1.234,56) sia valori con decimale inglese (1234.56).
-    if (testo.includes(",")) {
-      testo = testo.replace(/\./g, "").replace(",", ".");
-    }
-    const numero = Number(testo);
-    if (!Number.isFinite(numero)) return String(valore);
-    return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numero);
-  }
-
-  const cont = document.getElementById("tabella-container");
-  const t = document.createElement("table");
-  const thead = document.createElement("thead");
-  const trh = document.createElement("tr");
-  colonneTabella.forEach(col => {
-    const th = document.createElement("th");
-    th.textContent = col.label;
-    trh.appendChild(th);
-  });
-  thead.appendChild(trh);
-  t.appendChild(thead);
-
-  const tbody = document.createElement("tbody");
-  arr.forEach(r => {
-    const tr = document.createElement("tr");
-    if (r[chiaveCampo(r, "prenotato_da")]?.trim()) tr.classList.add("highlight");
-
-    colonneTabella.forEach(col => {
-      const td = document.createElement("td");
-      td.setAttribute("data-label", col.label);
-
-      if (col.whatsapp) {
-        const van = String(r[chiaveCampo(r, "VAN")] || "").trim();
-        if (van) {
-          const messaggio = `ciao, mi potresti prenotare il VAN ${van}`;
-          const linkWhatsApp = document.createElement("a");
-          linkWhatsApp.href = `https://wa.me/390812588214?text=${encodeURIComponent(messaggio)}`;
-          linkWhatsApp.target = "_blank";
-          linkWhatsApp.rel = "noopener noreferrer";
-          linkWhatsApp.textContent = "💬 Prenota";
-          linkWhatsApp.title = `Apri WhatsApp con il messaggio: ${messaggio}`;
-          linkWhatsApp.style.cssText = "display:inline-block;padding:6px 9px;background:#25D366;color:#fff;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
-          linkWhatsApp.addEventListener("click", ev => ev.stopPropagation());
-          td.appendChild(linkWhatsApp);
-        } else {
-          td.textContent = "—";
+      function formattaPrezzoEuro(valore) {
+        if (valore === null || valore === undefined || String(valore).trim() === "") return "";
+        if (typeof valore === "number") {
+          return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valore);
         }
-      } else if (col.scheda) {
-        const urlSchedaPdf = schedePdf[String(r[chiaveCampo(r, "id_veicolo")] || "").trim()];
-        if (urlSchedaPdf) {
-          const link = document.createElement("a");
-          link.href = urlSchedaPdf;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          link.textContent = "📄 Apri";
-          link.title = "Apri dettagli allestimento in una nuova pagina";
-          link.style.cssText = "display:inline-block;padding:5px 9px;background:#1769aa;color:white;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
-          link.addEventListener("click", ev => ev.stopPropagation());
-          td.appendChild(link);
-        } else {
-          td.textContent = "—";
+        let testo = String(valore).trim().replace(/€|\s/g, "");
+        if (testo.includes(",")) {
+          testo = testo.replace(/\./g, "").replace(",", ".");
         }
-      } else {
-        const chiave = chiaveCampo(r, col.campo);
-        let v = r[chiave] || "";
-        if (campiDate.some(c => c.toLowerCase() === col.campo.toLowerCase())) {
-          v = formattaData(v);
-        } else if (col.campo.toLowerCase() === "giorni_giacenza") {
-          v = v ? Math.round(parseFloat(v)).toString() : "";
-        } else if (col.campo.toLowerCase() === "prezzo_vendita_web") {
-          v = formattaPrezzoEuro(v);
-        }
-        td.textContent = v;
-        if (campiInGrassetto.has(col.campo.toLowerCase())) td.style.fontWeight = "bold";
-
-        // Mostra il segnale "Pronta consegna" nella colonna descrizione.
-        if (col.campo.toLowerCase() === "descrizione" && String(r[chiaveCampo(r, "tipo_allestimento")] || "").trim()) {
-          const badge = document.createElement("span");
-          badge.textContent = "Pronta consegna";
-          badge.style.cssText = "display:inline-block;margin-left:7px;padding:3px 6px;background:#16803c;color:#fff;border-radius:4px;font-size:11px;font-weight:bold;white-space:nowrap";
-          td.appendChild(document.createTextNode(" "));
-          td.appendChild(badge);
-        }
+        const numero = Number(testo);
+        if (!Number.isFinite(numero)) return String(valore);
+        return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numero);
       }
-      tr.appendChild(td);
-    });
-    tr.style.cursor = "pointer";
-    tr.onclick = () => mostraDettagli(r);
-    tbody.appendChild(tr);
-  });
-  t.appendChild(tbody);
-  cont.innerHTML = "";
-  cont.appendChild(t);
-}
+
+      const cont = document.getElementById("tabella-container");
+      const t = document.createElement("table");
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+      colonneTabella.forEach(col => {
+        const th = document.createElement("th");
+        th.textContent = col.label;
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+      t.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      arr.forEach(r => {
+        const tr = document.createElement("tr");
+        if (r[chiaveCampo(r, "prenotato_da")]?.trim()) tr.classList.add("highlight");
+
+        colonneTabella.forEach(col => {
+          const td = document.createElement("td");
+          td.setAttribute("data-label", col.label);
+
+          if (col.whatsapp) {
+            const van = String(r[chiaveCampo(r, "VAN")] || "").trim();
+            if (van) {
+              const messaggio = `ciao, mi potresti prenotare il VAN ${van}`;
+              const linkWhatsApp = document.createElement("a");
+              linkWhatsApp.href = `https://wa.me/390812588214?text=${encodeURIComponent(messaggio)}`;
+              linkWhatsApp.target = "_blank";
+              linkWhatsApp.rel = "noopener noreferrer";
+              linkWhatsApp.textContent = "💬 Prenota";
+              linkWhatsApp.style.cssText = "display:inline-block;padding:6px 9px;background:#25D366;color:#fff;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
+              linkWhatsApp.addEventListener("click", ev => ev.stopPropagation());
+              td.appendChild(linkWhatsApp);
+            } else {
+              td.textContent = "—";
+            }
+          } else if (col.scheda) {
+            const urlSchedaPdf = schedePdf[String(r[chiaveCampo(r, "id_veicolo")] || "").trim()];
+            if (urlSchedaPdf) {
+              const link = document.createElement("a");
+              link.href = urlSchedaPdf;
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+              link.textContent = "📄 Apri";
+              link.style.cssText = "display:inline-block;padding:5px 9px;background:#1769aa;color:white;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
+              link.addEventListener("click", ev => ev.stopPropagation());
+              td.appendChild(link);
+            } else {
+              td.textContent = "—";
+            }
+          } else {
+            const chiave = chiaveCampo(r, col.campo);
+            let v = r[chiave] || "";
+            if (campiDate.some(c => c.toLowerCase() === col.campo.toLowerCase())) {
+              v = formattaData(v);
+            } else if (col.campo.toLowerCase() === "giorni_giacenza") {
+              v = v ? Math.round(parseFloat(v)).toString() : "";
+            } else if (col.campo.toLowerCase() === "prezzo_vendita_web") {
+              v = formattaPrezzoEuro(v);
+            }
+            td.textContent = v;
+            if (campiInGrassetto.has(col.campo.toLowerCase())) td.style.fontWeight = "bold";
+
+            if (col.campo.toLowerCase() === "descrizione" && String(r[chiaveCampo(r, "tipo_allestimento")] || "").trim()) {
+              const badge = document.createElement("span");
+              badge.textContent = "Pronta consegna";
+              badge.style.cssText = "display:inline-block;margin-left:7px;padding:3px 6px;background:#16803c;color:#fff;border-radius:4px;font-size:11px;font-weight:bold;white-space:nowrap";
+              td.appendChild(document.createTextNode(" "));
+              td.appendChild(badge);
+            }
+          }
+          tr.appendChild(td);
+        });
+        tr.style.cursor = "pointer";
+        tr.onclick = () => mostraDettagli(r);
+        tbody.appendChild(tr);
+      });
+      t.appendChild(tbody);
+      cont.innerHTML = "";
+      cont.appendChild(t);
+    }
 
     function mostraMessaggio(txt) { document.getElementById("msg").textContent = txt; }
 
-    // Aggiorna le opzioni di ciascun filtro in base alle selezioni degli ALTRI filtri.
-    // Le selezioni già effettuate vengono mantenute anche se la combinazione restituisce zero risultati.
     function aggiornaOpzioniFiltri() {
       const selects = Array.from(document.querySelectorAll(".filtri select"));
-
       selects.forEach(sel => {
         const idx = parseInt(sel.getAttribute("data-col-index"), 10);
         const col = intestazione[idx];
@@ -758,127 +531,160 @@ function mostraTabella(arr) {
       mostraTabella(dati);
       mostraMessaggio(`${dati.length} record trovati`);
     }
-function stampaModale() {
-  const contenuto = document.getElementById('contenutoDettagli').innerHTML;
-  const finestraStampa = window.open('', '', 'width=900,height=700');
-  if (!finestraStampa) {
-    alert('Consenti l’apertura della finestra di stampa per proseguire.');
-    return;
-  }
 
-  finestraStampa.document.write(`
-    <!DOCTYPE html>
-    <html lang="it">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Scheda veicolo</title>
-        <style>
-          * { box-sizing: border-box; }
-          body {
-            font-family: Arial, Helvetica, sans-serif;
-            color: #243447;
-            background: #fff;
-            margin: 0;
-            padding: 18px;
-            font-size: 14px;
-            line-height: 1.45;
-          }
-          .modale-doppia-colonna {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            gap: 18px;
-            align-items: start;
-          }
-          .colonna-sinistra, .colonna-destra {
-            min-width: 0;
-            background: #fff;
-          }
-          h2 {
-            margin: 0 0 14px;
-            padding: 0 0 10px;
-            color: #123e63;
-            font-size: 22px;
-            border-bottom: 3px solid #00a6d6;
-          }
-          h3 {
-            margin: 4px 0 12px;
-            padding: 9px 12px;
-            color: #123e63;
-            font-size: 17px;
-            background: #eaf4fb;
-            border-left: 4px solid #00a6d6;
-            border-radius: 4px;
-          }
-          .lista-dettagli { list-style: none; padding: 0; margin: 0; }
-          .lista-dettagli li {
-            display: grid;
-            grid-template-columns: minmax(115px, 42%) minmax(0, 1fr);
-            gap: 10px;
-            padding: 8px 10px;
-            margin: 0;
-            border-bottom: 1px solid #e4ebf0;
-            overflow-wrap: anywhere;
-          }
-          .lista-dettagli li:nth-child(even) { background: #f5f9fc; }
-          .lista-dettagli li strong { color: #34546d; text-align: left; }
-          .lista-dettagli li span { color: #172b3a; text-align: left; }
-          .tabella-optional { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
-          .tabella-optional th, .tabella-optional td {
-            border: 1px solid #d6e0e8;
-            padding: 8px;
-            text-align: left;
-            overflow-wrap: anywhere;
-          }
-          .tabella-optional th { background: #123e63; color: #fff; }
-          .tabella-optional tbody tr:nth-child(even) { background: #f5f9fc; }
-          a { color: #075b96; }
-          @media (max-width: 650px) {
-            body { padding: 10px; font-size: 14px; }
-            .modale-doppia-colonna { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-            h2 { font-size: 20px; }
-            .lista-dettagli li { grid-template-columns: minmax(0, 40%) minmax(0, 1fr); gap: 8px; padding: 9px 7px; }
-            .tabella-optional { font-size: 12px; }
-            .tabella-optional th, .tabella-optional td { padding: 6px 5px; }
-          }
-          @media print {
-            body { padding: 0; font-size: 10pt; }
-            .modale-doppia-colonna { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12mm; }
-            /* Non bloccare intere colonne/tabelle su una pagina: lascia scorrere gli optional
-               nello spazio disponibile fin dalla prima pagina. Mantieni unite solo le righe. */
-            .colonna-sinistra, .colonna-destra, .optional-wrapper {
-              break-inside: auto !important;
-              page-break-inside: auto !important;
-              min-height: 0;
-              height: auto;
-              overflow: visible;
-            }
-            .tabella-optional { break-inside: auto; page-break-inside: auto; }
-            .tabella-optional thead { display: table-header-group; }
-            .tabella-optional tr { break-inside: avoid; page-break-inside: avoid; }
-            h2, h3, .tabella-optional th { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            h3 { break-after: avoid; page-break-after: avoid; }
-            a { text-decoration: none; }
-          }
-        </style>
-      </head>
-      <body>${contenuto}</body>
-    </html>
-  `);
-  finestraStampa.document.close();
-  finestraStampa.focus();
-  setTimeout(() => finestraStampa.print(), 300);
-}
+    // --- TABELLA DI RIEPILOGO STOCK ---
+    function apriRiepilogo() {
+      const modal = document.getElementById("riepilogoModal");
+      const cont = document.getElementById("contenutoRiepilogo");
 
+      const mappaRiepilogo = {};
 
+      datiCorrenti.forEach(r => {
+        // CORRETTO: Recupera tipo_veicolo (non tipo_allestimento)
+        const tipoVeicolo = r[chiaveCampo(r, "tipo_veicolo")]?.trim() || "—";
+        const descrizione = r[chiaveCampo(r, "descrizione")]?.trim() || "N/D";
+        const status = r[chiaveCampo(r, "descri_status")]?.trim() || "N/D";
+        const tipoAllestimento = r[chiaveCampo(r, "tipo_allestimento")]?.trim() || "";
+        const prenotatoDa = r[chiaveCampo(r, "prenotato_da")]?.trim() || "";
+
+        const chiaveGroup = `${tipoVeicolo}___${descrizione}`;
+
+        if (!mappaRiepilogo[chiaveGroup]) {
+          mappaRiepilogo[chiaveGroup] = {
+            tipo_veicolo: tipoVeicolo,
+            descrizione: descrizione,
+            totale: 0,
+            status_map: {},
+            prenotati: 0,
+            allestiti: 0
+          };
+        }
+
+        const gruppo = mappaRiepilogo[chiaveGroup];
+        gruppo.totale += 1;
+
+        // Conteggio di cui Status
+        gruppo.status_map[status] = (gruppo.status_map[status] || 0) + 1;
+
+        // Conteggio di cui Prenotati
+        if (prenotatoDa !== "") {
+          gruppo.prenotati += 1;
+        }
+
+        // Conteggio di cui Allestiti (se tipo_allestimento è valorizzato)
+        if (tipoAllestimento !== "" && tipoAllestimento !== "—") {
+          gruppo.allestiti += 1;
+        }
+      });
+
+      // Ordinamento 1: tipo_veicolo (alfabetico), Ordinamento 2: descrizione (alfabetico)
+      const listaOrdinata = Object.values(mappaRiepilogo).sort((a, b) => {
+        const compTipo = a.tipo_veicolo.localeCompare(b.tipo_veicolo, "it");
+        if (compTipo !== 0) return compTipo;
+        return a.descrizione.localeCompare(b.descrizione, "it");
+      });
+
+      let html = `
+        <table class="tabella-riepilogo">
+          <thead>
+            <tr>
+              <th>Tipo Veicolo</th>
+              <th>Descrizione</th>
+              <th>Totale</th>
+              <th>di cui Status</th>
+              <th>di cui Prenotati</th>
+              <th>di cui Allestiti</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      if (listaOrdinata.length === 0) {
+        html += `<tr><td colspan="6" style="text-align:center;">Nessun dato disponibile.</td></tr>`;
+      } else {
+        listaOrdinata.forEach(item => {
+          const stringaStatus = Object.entries(item.status_map)
+            .map(([st, count]) => `• ${st}: <strong>${count}</strong>`)
+            .join("<br>");
+
+          html += `
+            <tr>
+              <td><strong>${item.tipo_veicolo}</strong></td>
+              <td>${item.descrizione}</td>
+              <td style="text-align:center;"><strong>${item.totale}</strong></td>
+              <td>${stringaStatus}</td>
+              <td style="text-align:center; font-weight:bold; color:${item.prenotati > 0 ? '#c62828' : 'inherit'};">${item.prenotati}</td>
+              <td style="text-align:center; font-weight:bold; color:${item.allestiti > 0 ? '#16803c' : 'inherit'};">${item.allestiti}</td>
+            </tr>
+          `;
+        });
+      }
+
+      html += `</tbody></table>`;
+      cont.innerHTML = html;
+      modal.style.display = "block";
+    }
+
+    function stampaModale() {
+      const contenuto = document.getElementById('contenutoDettagli').innerHTML;
+      const finestraStampa = window.open('', '', 'width=900,height=700');
+      if (!finestraStampa) {
+        alert('Consenti l’apertura della finestra di stampa per proseguire.');
+        return;
+      }
+
+      finestraStampa.document.write(`
+        <!DOCTYPE html>
+        <html lang="it">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Scheda veicolo</title>
+            <style>
+              * { box-sizing: border-box; }
+              body { font-family: Arial, Helvetica, sans-serif; color: #243447; background: #fff; margin: 0; padding: 18px; font-size: 14px; line-height: 1.45; }
+              .modale-doppia-colonna { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+              .colonna-sinistra, .colonna-destra { min-width: 0; background: #fff; }
+              h2 { margin: 0 0 14px; padding: 0 0 10px; color: #123e63; font-size: 22px; border-bottom: 3px solid #00a6d6; }
+              h3 { margin: 4px 0 12px; padding: 9px 12px; color: #123e63; font-size: 17px; background: #eaf4fb; border-left: 4px solid #00a6d6; border-radius: 4px; }
+              .lista-dettagli { list-style: none; padding: 0; margin: 0; }
+              .lista-dettagli li { display: grid; grid-template-columns: minmax(115px, 42%) minmax(0, 1fr); gap: 10px; padding: 8px 10px; margin: 0; border-bottom: 1px solid #e4ebf0; overflow-wrap: anywhere; }
+              .lista-dettagli li:nth-child(even) { background: #f5f9fc; }
+              .lista-dettagli li strong { color: #34546d; text-align: left; }
+              .lista-dettagli li span { color: #172b3a; text-align: left; }
+              .tabella-optional { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+              .tabella-optional th, .tabella-optional td { border: 1px solid #d6e0e8; padding: 8px; text-align: left; overflow-wrap: anywhere; }
+              .tabella-optional th { background: #123e63; color: #fff; }
+              .tabella-optional tbody tr:nth-child(even) { background: #f5f9fc; }
+              a { color: #075b96; }
+            </style>
+          </head>
+          <body>${contenuto}</body>
+        </html>
+      `);
+      finestraStampa.document.close();
+      finestraStampa.focus();
+      setTimeout(() => finestraStampa.print(), 300);
+    }
   </script>
-  
-  <div id="dettagliModal" style="display:none; position:fixed; top:10%; left:10%; width:80%; max-height:80vh; overflow-y:auto; background:#fff; border:1px solid #ccc; padding:20px; z-index:9999; border-radius:8px; box-shadow: 0 0 15px rgba(0,0,0,0.3); font-family:Arial, sans-serif;">
-  <button onclick="document.getElementById('dettagliModal').style.display='none'" style="float:right;">Chiudi ×</button>
-  <button onclick="stampaModale()">Stampa veicolo</button>
-  <div id="contenutoDettagli"></div>
-</div>
 
-  
+  <!-- Modale Dettagli Veicolo -->
+  <div id="dettagliModal" class="modal-overlay">
+    <div class="modal-content">
+      <button onclick="document.getElementById('dettagliModal').style.display='none'" style="float:right;">Chiudi ×</button>
+      <button onclick="stampaModale()">Stampa veicolo</button>
+      <div id="contenutoDettagli"></div>
+    </div>
+  </div>
+
+  <!-- Modale per il Riepilogo Stock -->
+  <div id="riepilogoModal" class="modal-overlay">
+    <div class="modal-content">
+      <button onclick="document.getElementById('riepilogoModal').style.display='none'" style="float:right; border:0; background:#ccc; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">Chiudi ×</button>
+      <h2>Riepilogo Stock</h2>
+      <div id="contenutoRiepilogo"></div>
+    </div>
+  </div>
+
 </body>
 </html>
