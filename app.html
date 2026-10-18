@@ -21,11 +21,13 @@
     .filtri { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
     .filtro { display: flex; flex-direction: column; min-width: 150px; }
     select { min-height: 80px; background: #f8f8f8; border: 1px solid #ccc; border-radius: 5px; white-space: normal; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; background: white; color: black; table-layout: auto; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-    th { background: #003366; color: white; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
-    td { white-space: normal; }
-    tr.highlight { background-color: #fdd !important; }
+    
+    /* Tabella Principale */
+    #tabella-container table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; background: white; color: black; table-layout: auto; }
+    #tabella-container th, #tabella-container td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+    #tabella-container th { background: #003366; color: white; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+    #tabella-container td { white-space: normal; }
+    #tabella-container tr.highlight { background-color: #fdd !important; }
     
     /* Area messaggi e pulsante riepilogo in alto */
     .status-bar { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
@@ -39,105 +41,29 @@
     .toolbar { margin-bottom: 15px; }
     .toolbar button { margin-right: 10px; padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #0055aa; color: white; border: none; border-radius: 5px; }
     .toolbar button:hover { background: #004080; }
-
-/* Stili avanzati per il Riepilogo Stock */
-    .tabella-riepilogo {
-      width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;
-    }
-    .tabella-riepilogo th, .tabella-riepilogo td {
-      border: 1px solid #ddd; padding: 8px; text-align: left; color: #333;
-    }
-    .tabella-riepilogo th { background-color: #003366; color: #ffffff; }
-
-/* Stili generali Riepilogo Stock */
-    .tabella-riepilogo {
-      width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;
-    }
-    .tabella-riepilogo th, .tabella-riepilogo td {
-      border: 1px solid #ddd; padding: 8px; text-align: left; color: #333;
-    }
-    .tabella-riepilogo th { background-color: #003366; color: #ffffff; }
-
-    /* Layout mobile responsive senza accavallamenti */
-    @media (max-width: 768px) {
-      .modal-content {
-        width: 95% !important;
-        margin: 2% auto !important;
-        padding: 12px !important;
-        max-height: 88vh !important;
-      }
-      
-      .tabella-riepilogo, .tabella-riepilogo thead, .tabella-riepilogo tbody, .tabella-riepilogo th, .tabella-riepilogo td, .tabella-riepilogo tr {
-        display: block !important;
-        width: 100% !important;
-        box-sizing: border-box;
-      }
-      
-      .tabella-riepilogo thead {
-        display: none !important; /* Nasconde l'intestazione orizzontale su mobile */
-      }
-      
-      .tabella-riepilogo tr {
-        margin-bottom: 16px;
-        background: #ffffff;
-        border: 2px solid #003366;
-        border-radius: 8px;
-        padding: 10px 12px;
-        box-shadow: 0 3px 6px rgba(0,0,0,0.12);
-      }
-      
-      .tabella-riepilogo td {
-        display: flex !important;
-        flex-direction: column !important; /* Dispone etichetta e valore in verticale per evitare sovrapposizioni */
-        align-items: flex-start !important;
-        padding: 6px 0 !important;
-        border: none !important;
-        border-bottom: 1px solid #eef2f5 !important;
-        font-size: 13px !important;
-        text-align: left !important;
-        line-height: 1.4;
-      }
-      
-      .tabella-riepilogo td:last-child {
-        border-bottom: none !important;
-      }
-
-      /* Definizione etichette su mobile */
-      .tabella-riepilogo td:nth-child(1)::before { content: "Tipo Veicolo:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
-      .tabella-riepilogo td:nth-child(2)::before { content: "Descrizione:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
-      .tabella-riepilogo td:nth-child(3)::before { content: "Totale Stock:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
-      .tabella-riepilogo td:nth-child(4)::before { content: "di cui Status:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
-      .tabella-riepilogo td:nth-child(5)::before { content: "di cui Prenotati:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
-      .tabella-riepilogo td:nth-child(6)::before { content: "di cui Allestiti:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
-    }
-
 	
+/* Responsive Tabella Principale su Mobile */
 @media (max-width: 768px) {
   header { flex-direction: column; align-items: flex-start; }
   .user-badge-container { width: 100%; justify-content: space-between; box-sizing: border-box; }
   .filtri { flex-direction: column; }
   .filtro { min-width: unset; width: 100%; }
   select { min-height: 60px; }
-  table, thead, tbody, th, td, tr { display: block; }
-  thead { display: none; }
-  tr { margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; background: white; color: black; padding: 10px; }
-  td { position: relative; padding-left: 50%; text-align: left; border: none; border-bottom: 1px solid #eee; }
-  td::before { content: attr(data-label); position: absolute; left: 10px; top: 6px; font-weight: bold; white-space: nowrap; }
+  
+  #tabella-container table, #tabella-container thead, #tabella-container tbody, #tabella-container th, #tabella-container td, #tabella-container tr { display: block; }
+  #tabella-container thead { display: none; }
+  #tabella-container tbody tr { margin: 0 0 16px 0; padding: 8px 10px 4px; border: 2px solid #6f8da9; border-left: 6px solid #00a6d6; border-radius: 10px; background: #f7fbff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22); }
+  #tabella-container tbody tr:nth-child(even) { background: #eaf3fb; }
+  #tabella-container tbody tr.highlight { background: #ffe1e1 !important; border-color: #d9534f; border-left-color: #c62828; }
+  #tabella-container tbody td { position: relative; padding: 10px 6px 10px 48%; border: none; border-bottom: 1px solid #c8d7e5; line-height: 1.35; overflow-wrap: anywhere; text-align: left; }
+  #tabella-container tbody td:last-child { border-bottom: none; }
+  #tabella-container tbody td::before { content: attr(data-label); position: absolute; left: 6px; top: 10px; width: 43%; color: #17476e; font-size: 0.92em; line-height: 1.25; white-space: normal; font-weight: bold; }
 }
 
 @media (max-width: 480px) {
   body { padding: 10px; }
   .toolbar button { margin-bottom: 10px; width: 100%; }
   h1 { font-size: 1.4em; }
-}
-
-@media (max-width: 768px) {
-  tbody tr { margin: 0 0 16px 0; padding: 8px 10px 4px; border: 2px solid #6f8da9; border-left: 6px solid #00a6d6; border-radius: 10px; background: #f7fbff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22); }
-  tbody tr:nth-child(even) { background: #eaf3fb; }
-  tbody tr.highlight { background: #ffe1e1 !important; border-color: #d9534f; border-left-color: #c62828; }
-  tbody td { padding: 10px 6px 10px 48%; border: none; border-bottom: 1px solid #c8d7e5; line-height: 1.35; overflow-wrap: anywhere; }
-  tbody td:last-child { border-bottom: none; }
-  tbody td::before { left: 6px; top: 10px; width: 43%; color: #17476e; font-size: 0.92em; line-height: 1.25; white-space: normal; }
 }
 
 /* Modali generali */
@@ -147,7 +73,7 @@
 }
 .modal-content {
   background-color: #fff; margin: 5% auto; padding: 20px 30px; width: 80%;
-  max-width: 900px; border-radius: 12px; font-family: Arial, sans-serif;
+  max-width: 950px; border-radius: 12px; font-family: Arial, sans-serif;
   box-shadow: 0 0 20px rgba(0,0,0,0.2); color: #333; max-height: 80vh; overflow-y: auto;
 }
 .modal-content h2 { margin-top: 0; font-size: 1.5em; border-bottom: 1px solid #ccc; padding-bottom: 10px; color: #123e63; }
@@ -157,28 +83,30 @@
 .modal-content li span { width: 60%; text-align: left; color: #555; }
 .modal-content h3 { margin-top: 20px; font-size: 1.3em; color: #444; border-top: 1px solid #ccc; padding-top: 10px; }
 
+/* Contenitore con scorrimento orizzontale per la Tabella di Riepilogo */
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 10px;
+}
+
 .tabella-optional, .tabella-riepilogo {
-  width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;
+  width: 100%; border-collapse: collapse; font-size: 14px; min-width: 650px;
 }
 .tabella-optional th, .tabella-optional td, .tabella-riepilogo th, .tabella-riepilogo td {
-  border: 1px solid #ddd; padding: 8px; text-align: left; color: #333;
+  border: 1px solid #ddd; padding: 10px 8px; text-align: left; color: #333; vertical-align: top;
 }
-.tabella-optional th, .tabella-riepilogo th { background-color: #003366; color: #ffffff; }
+.tabella-optional th, .tabella-riepilogo th { 
+  background-color: #003366; color: #ffffff; white-space: nowrap; font-size: 13px;
+}
 
-/* Ottimizzazione specifica per il Riepilogo Stock su Smartphone */
 @media (max-width: 768px) {
   .modal-content {
     width: 95% !important;
-    margin: 2% auto !important;
+    margin: 3% auto !important;
     padding: 12px !important;
     max-height: 88vh !important;
-  }
-  .tabella-riepilogo {
-    font-size: 12px !important;
-  }
-  .tabella-riepilogo th, .tabella-riepilogo td {
-    padding: 6px 4px !important;
-    word-break: break-word;
   }
 }
 
@@ -800,18 +728,19 @@
       });
 
       let html = `
-        <table class="tabella-riepilogo">
-          <thead>
-            <tr>
-              <th>Tipo Veicolo</th>
-              <th>Descrizione</th>
-              <th>Totale</th>
-              <th>di cui Status</th>
-              <th>di cui Prenotati</th>
-              <th>di cui Allestiti</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div class="table-responsive-wrapper">
+          <table class="tabella-riepilogo">
+            <thead>
+              <tr>
+                <th>Tipo Veicolo</th>
+                <th>Descrizione</th>
+                <th>Totale</th>
+                <th>di cui Status</th>
+                <th>di cui Prenotati</th>
+                <th>di cui Allestiti</th>
+              </tr>
+            </thead>
+            <tbody>
       `;
 
       if (listaOrdinata.length === 0) {
@@ -835,7 +764,11 @@
         });
       }
 
-      html += `</tbody></table>`;
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
       cont.innerHTML = html;
       modal.style.display = "block";
     }
