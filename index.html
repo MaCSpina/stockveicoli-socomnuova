@@ -45,6 +45,14 @@
     </div>
 
     <script>
+        let ipUtentePubblico = "In rilevamento...";
+
+        // Rileva l'IP pubblico all'apertura della pagina di login
+        fetch("https://api.ipify.org?format=json")
+            .then(res => res.json())
+            .then(data => { ipUtentePubblico = data.ip; })
+            .catch(() => { ipUtentePubblico = "Non rilevato"; });
+
         // Se l'utente ha già una sessione attiva, entra direttamente
         window.addEventListener("DOMContentLoaded", () => {
             if (sessionStorage.getItem("isAuthorized") === "true") {
@@ -52,13 +60,12 @@
             }
         });
 
-        // Funzione per calcolare l'hash SHA-256 usando CryptoJS
         function calcolaSHA256(testo) {
             return CryptoJS.SHA256(testo).toString(CryptoJS.enc.Hex);
         }
 
         async function verificaLogin(event) {
-            event.preventDefault(); // Blocca il ricaricamento della pagina del form
+            event.preventDefault();
 
             const utenteInserito = document.getElementById("user-input").value.trim();
             const pinInserito = document.getElementById("pin-input").value.trim();
@@ -72,7 +79,6 @@
                 if (!res.ok) throw new Error("Errore nel caricamento utenti");
                 const users = await res.json();
 
-                // Verifica se l'utente esiste in users.json e se l'hash del PIN corrisponde
                 let utenteValido = false;
                 for (const [username, pinHash] of Object.entries(users)) {
                     if (username.toLowerCase() === utenteInserito.toLowerCase() && pinHash.toLowerCase() === hashInserito.toLowerCase()) {
@@ -85,12 +91,12 @@
                     sessionStorage.setItem("isAuthorized", "true");
                     sessionStorage.setItem("currentUser", utenteValido);
 
-                    // Invia il log in background a Google Sheets
-                    inviaLog(utenteValido);
+                    // Invia il log di login con IP e Dispositivo
+                    inviaLogLogin(utenteValido);
 
                     setTimeout(() => {
                         window.location.href = "app.html";
-                    }, 200);
+                    }, 250);
                 } else {
                     errorMsg.textContent = "Nome utente o PIN errato!";
                     errorMsg.style.display = "block";
@@ -102,7 +108,7 @@
             }
         }
 
-        async function inviaLog(nomeUtente) {
+        async function inviaLogLogin(nomeUtente) {
             try {
                 const res = await fetch("config.json?nocache=" + Date.now());
                 if (!res.ok) return;
@@ -112,7 +118,11 @@
                         method: "POST",
                         mode: "no-cors",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ utente: nomeUtente, note: "Login effettuato su Stock" })
+                        body: JSON.stringify({ 
+                            utente: nomeUtente, 
+                            note: "Login effettuato su Stock | IP: " + ipUtentePubblico,
+                            dispositivo: navigator.userAgent 
+                        })
                     });
                 }
             } catch(e) {
