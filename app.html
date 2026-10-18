@@ -49,49 +49,68 @@
     }
     .tabella-riepilogo th { background-color: #003366; color: #ffffff; }
 
-    /* Ottimizzazione responsiva specifica per il Riepilogo su Mobile */
+/* Stili generali Riepilogo Stock */
+    .tabella-riepilogo {
+      width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;
+    }
+    .tabella-riepilogo th, .tabella-riepilogo td {
+      border: 1px solid #ddd; padding: 8px; text-align: left; color: #333;
+    }
+    .tabella-riepilogo th { background-color: #003366; color: #ffffff; }
+
+    /* Layout mobile responsive senza accavallamenti */
     @media (max-width: 768px) {
       .modal-content {
         width: 95% !important;
         margin: 2% auto !important;
-        padding: 10px !important;
-        max-height: 85vh !important;
+        padding: 12px !important;
+        max-height: 88vh !important;
       }
+      
       .tabella-riepilogo, .tabella-riepilogo thead, .tabella-riepilogo tbody, .tabella-riepilogo th, .tabella-riepilogo td, .tabella-riepilogo tr {
         display: block !important;
         width: 100% !important;
         box-sizing: border-box;
       }
+      
       .tabella-riepilogo thead {
-        display: none !important; /* Nasconde l'intestazione orizzontale classica su mobile */
+        display: none !important; /* Nasconde l'intestazione orizzontale su mobile */
       }
+      
       .tabella-riepilogo tr {
-        margin-bottom: 15px;
-        background: #fdfdfd;
+        margin-bottom: 16px;
+        background: #ffffff;
         border: 2px solid #003366;
         border-radius: 8px;
-        padding: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        padding: 10px 12px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.12);
       }
+      
       .tabella-riepilogo td {
-        position: relative;
-        padding: 6px 6px 6px 45% !important;
-        text-align: left;
-        border: none;
-        border-bottom: 1px solid #eee;
-        font-size: 13px;
+        display: flex !important;
+        flex-direction: column !important; /* Dispone etichetta e valore in verticale per evitare sovrapposizioni */
+        align-items: flex-start !important;
+        padding: 6px 0 !important;
+        border: none !important;
+        border-bottom: 1px solid #eef2f5 !important;
+        font-size: 13px !important;
+        text-align: left !important;
+        line-height: 1.4;
       }
+      
       .tabella-riepilogo td:last-child {
-        border-bottom: none;
+        border-bottom: none !important;
       }
-      /* Etichette automatiche per ogni riga su mobile */
-      .tabella-riepilogo td:nth-child(1)::before { content: "Tipo Veicolo: "; font-weight: bold; color: #003366; position: absolute; left: 6px; }
-      .tabella-riepilogo td:nth-child(2)::before { content: "Descrizione: "; font-weight: bold; color: #003366; position: absolute; left: 6px; }
-      .tabella-riepilogo td:nth-child(3)::before { content: "Totale Stock: "; font-weight: bold; color: #003366; position: absolute; left: 6px; }
-      .tabella-riepilogo td:nth-child(4)::before { content: "di cui Status: "; font-weight: bold; color: #003366; position: absolute; left: 6px; }
-      .tabella-riepilogo td:nth-child(5)::before { content: "di cui Prenotati: "; font-weight: bold; color: #003366; position: absolute; left: 6px; }
-      .tabella-riepilogo td:nth-child(6)::before { content: "di cui Allestiti: "; font-weight: bold; color: #003366; position: absolute; left: 6px; }
+
+      /* Definizione etichette su mobile */
+      .tabella-riepilogo td:nth-child(1)::before { content: "Tipo Veicolo:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
+      .tabella-riepilogo td:nth-child(2)::before { content: "Descrizione:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
+      .tabella-riepilogo td:nth-child(3)::before { content: "Totale Stock:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
+      .tabella-riepilogo td:nth-child(4)::before { content: "di cui Status:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
+      .tabella-riepilogo td:nth-child(5)::before { content: "di cui Prenotati:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
+      .tabella-riepilogo td:nth-child(6)::before { content: "di cui Allestiti:"; font-weight: bold; color: #003366; margin-bottom: 2px; }
     }
+
 	
 @media (max-width: 768px) {
   header { flex-direction: column; align-items: flex-start; }
