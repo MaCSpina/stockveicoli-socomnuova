@@ -142,6 +142,13 @@
     let URL_OPTIONAL = "";
     let URL_SCHEDE_PDF = "";
     let URL_LOG_SCRIPT = "";
+    let ipUtentePubblico = "In rilevamento...";
+
+    // Ottiene l'IP pubblico dell'utente all'avvio
+    fetch("https://api.ipify.org?format=json")
+      .then(res => res.json())
+      .then(data => { ipUtentePubblico = data.ip; })
+      .catch(() => { ipUtentePubblico = "Non rilevato"; });
 
     const campiEsclusiFiltri = ["data_prenotazione","id_veicolo","VAN","telaio","versione","data_inserimento_ordine","data_arrivo","giorni_giacenza","data_arrivo_prevista","scadenza_prenot","cod_gomme_specifico","descr_gomme_specifico","cod_gomme_generico","descr_gomme_generico","data_ins_OCF","larghezza","listino_originale","prezzo_versione","prezzo_opt","cod_fdp2","aggiornamento_stock","cod_modello_vp","cod_tipologia_allestimento"];
     const campiDate = ["data_prenotazione","data_inserimento_ordine","data_arrivo","data_ins_OCF","data_arrivo_prevista","scadenza_prenot"];
@@ -282,7 +289,7 @@
         }
     }
 
-    // Logout manuale con tracciamento dispositivo
+    // Logout manuale
     async function logout() {
         const utente = sessionStorage.getItem("currentUser") || "Utente";
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
@@ -294,7 +301,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 
                         utente: utente, 
-                        note: "Disconnessione (Logout)",
+                        note: "Disconnessione (Logout) | IP: " + ipUtentePubblico,
                         dispositivo: navigator.userAgent 
                     })
                 });
@@ -307,7 +314,7 @@
         window.location.href = "index.html";
     }
 
-    // Invio log generico con tracciamento dispositivo
+    // Invio log generico per attivita
     async function inviaLogAttivita(testoNota) {
         const utente = sessionStorage.getItem("currentUser") || "Utente";
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
@@ -319,7 +326,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 
                         utente: utente, 
-                        note: testoNota,
+                        note: testoNota + " | IP: " + ipUtentePubblico,
                         dispositivo: navigator.userAgent 
                     })
                 });
@@ -329,7 +336,7 @@
         }
     }
 
-    // Tracciamento affidabile per chiusura scheda/browser con dispositivo
+    // Tracciamento affidabile per chiusura scheda/browser
     function tracciaChiusura() {
         const utente = sessionStorage.getItem("currentUser");
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
@@ -337,7 +344,7 @@
         if (utente && logUrl) {
             const payload = JSON.stringify({ 
                 utente: utente, 
-                note: "Chiusura scheda / abbandono pagina",
+                note: "Chiusura scheda / abbandono pagina | IP: " + ipUtentePubblico,
                 dispositivo: navigator.userAgent 
             });
             if (navigator.sendBeacon) {
