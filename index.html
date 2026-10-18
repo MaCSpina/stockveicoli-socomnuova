@@ -35,10 +35,10 @@
 
     <div class="auth-box">
         <h2>Area Riservata</h2>
-        <p>Stock Veicoli - Socom Nuova</p>
+        <p>Stock Veicoli - Socom NUOVA</p>
         <form id="auth-form" onsubmit="verificaLogin(event)">
             <input type="text" id="user-input" placeholder="Nome Utente" required autofocus>
-            <input type="password" id="pin-input" placeholder="password" required>
+            <input type="password" id="pin-input" placeholder="Password / PIN" required>
             <button type="submit">Accedi</button>
             <div id="error-msg" class="error-msg">Credenziali non valide. Riprova.</div>
         </form>
@@ -52,38 +52,71 @@
             }
         });
 
+        // Funzione per calcolare l'hash SHA-256 usando CryptoJS
+        function calcolaSHA256(testo) {
+            return CryptoJS.SHA256(testo).toString(CryptoJS.enc.Hex);
+        }
+
         async function verificaLogin(event) {
-            event.preventDefault();
-            const username = document.getElementById("user-input").value.trim().toLowerCase();
-            const pin = document.getElementById("pin-input").value;
+            event.preventDefault(); // Blocca il ricaricamento della pagina del form
+
+            const utenteInserito = document.getElementById("user-input").value.trim();
+            const pinInserito = document.getElementById("pin-input").value.trim();
+            const hashInserito = calcolaSHA256(pinInserito);
             const errorMsg = document.getElementById("error-msg");
 
+            errorMsg.style.display = "none";
+
             try {
-                // 1. Scarica la lista degli utenti autorizzati da GitHub
-                const response = await fetch('users.json');
-                if (!response.ok) throw new Error("Impossibile caricare i dati di accesso");
-                const utentiAutorizzati = await response.json();
+                const res = await fetch("users.json?nocache=" + Date.now());
+                if (!res.ok) throw new Error("Errore nel caricamento utenti");
+                const users = await res.json();
 
-                // 2. Controlla se l'utente inserito esiste nel file
-                if (utentiAutorizzati[username]) {
-                    // 3. Calcola l'hash SHA-256 del PIN digitato
-                    const pinHash = CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex).toLowerCase();
-
-                    // 4. Confronta l'hash calcolato con quello associato all'utente
-                    if (pinHash === utentiAutorizzati[username]) {
-                        sessionStorage.setItem("isAuthorized", "true");
-                        window.location.href = "app.html";
-                        return;
+                // Verifica se l'utente esiste in users.json e se l'hash del PIN corrisponde
+                let utenteValido = false;
+                for (const [username, pinHash] of Object.entries(users)) {
+                    if (username.toLowerCase() === utenteInserito.toLowerCase() && pinHash.toLowerCase() === hashInserito.toLowerCase()) {
+                        utenteValido = username;
+                        break;
                     }
                 }
 
-                // Se utente non trovato o PIN errato
-                throw new Error("Credenziali errate");
+                if (utenteValido) {
+                    sessionStorage.setItem("isAuthorized", "true");
+                    sessionStorage.setItem("currentUser", utenteValido);
 
+                    // Invia il log in background a Google Sheets
+                    inviaLog(utenteValido);
+
+                    setTimeout(() => {
+                        window.location.href = "app.html";
+                    }, 200);
+                } else {
+                    errorMsg.textContent = "Nome utente o PIN errato!";
+                    errorMsg.style.display = "block";
+                }
             } catch (err) {
+                console.error("Errore durante il login:", err);
+                errorMsg.textContent = "Errore di connessione o file non trovato.";
                 errorMsg.style.display = "block";
-                document.getElementById("pin-input").value = "";
-                document.getElementById("pin-input").focus();
+            }
+        }
+
+        async function inviaLog(nomeUtente) {
+            try {
+                const res = await fetch("config.json?nocache=" + Date.now());
+                if (!res.ok) return;
+                const config = await res.json();
+                if (config.URL_LOG_SCRIPT) {
+                    fetch(config.URL_LOG_SCRIPT, {
+                        method: "POST",
+                        mode: "no-cors",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ utente: nomeUtente, note: "Login effettuato su Stock" })
+                    });
+                }
+            } catch(e) {
+                console.error("Log non inviato:", e);
             }
         }
     </script>

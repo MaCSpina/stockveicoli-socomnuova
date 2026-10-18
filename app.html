@@ -8,9 +8,16 @@
   <style>
     /* Stili generali */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #121e2d; color: white; }
-    header { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
     h1 { margin: 0; font-size: 2em; color: #00bfff; }
     #ultimo-aggiornamento { font-size: 0.9em; color: #cccccc; margin-top: 4px; }
+    
+    /* Box utente loggato nell'header */
+    .user-badge-container { display: flex; align-items: center; gap: 10px; background: #1c2d42; padding: 8px 14px; border-radius: 8px; border: 1px solid #0055aa; }
+    .user-badge-text { font-size: 0.9em; color: #00e5ff; font-weight: bold; }
+    .btn-logout { background: #d32f2f; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold; }
+    .btn-logout:hover { background: #b71c1c; }
+
     .filtri { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
     .filtro { display: flex; flex-direction: column; min-width: 150px; }
     select { min-height: 80px; background: #f8f8f8; border: 1px solid #ccc; border-radius: 5px; white-space: normal; }
@@ -34,6 +41,8 @@
     .toolbar button:hover { background: #004080; }
 	
 @media (max-width: 768px) {
+  header { flex-direction: column; align-items: flex-start; }
+  .user-badge-container { width: 100%; justify-content: space-between; box-sizing: border-box; }
   .filtri { flex-direction: column; }
   .filtro { min-width: unset; width: 100%; }
   select { min-height: 60px; }
@@ -98,8 +107,16 @@
 </script>
 
   <header>
-    <h1>Socom Nuova Stock</h1>
-    <div id="ultimo-aggiornamento">Ultimo aggiornamento: ...</div>
+    <div>
+      <h1>Socom Nuova Stock</h1>
+      <div id="ultimo-aggiornamento">Ultimo aggiornamento: ...</div>
+    </div>
+    
+    <!-- Badge Utente Loggato -->
+    <div class="user-badge-container">
+      <div class="user-badge-text">👤 Utente: <span id="nomeUtenteLogged">Ospite</span></div>
+      <button class="btn-logout" onclick="logout()">Esci</button>
+    </div>
   </header>
 
   <main>
@@ -124,6 +141,7 @@
     let BASE_URL = "";
     let URL_OPTIONAL = "";
     let URL_SCHEDE_PDF = "";
+    let URL_LOG_SCRIPT = "";
 
     const campiEsclusiFiltri = ["data_prenotazione","id_veicolo","VAN","telaio","versione","data_inserimento_ordine","data_arrivo","giorni_giacenza","data_arrivo_prevista","scadenza_prenot","cod_gomme_specifico","descr_gomme_specifico","cod_gomme_generico","descr_gomme_generico","data_ins_OCF","larghezza","listino_originale","prezzo_versione","prezzo_opt","cod_fdp2","aggiornamento_stock","cod_modello_vp","cod_tipologia_allestimento"];
     const campiDate = ["data_prenotazione","data_inserimento_ordine","data_arrivo","data_ins_OCF","data_arrivo_prevista","scadenza_prenot"];
@@ -140,7 +158,6 @@
       return `${gg}/${mm}/${yyyy}`;
     }
 
-    // Helper per trovare le chiavi trascurando maiuscole/minuscole
     function chiaveCampo(record, nomeCampo) {
       if (!record) return nomeCampo;
       if (Object.prototype.hasOwnProperty.call(record, nomeCampo)) return nomeCampo;
@@ -148,7 +165,6 @@
       return Object.keys(record).find(k => k.toLowerCase() === nomeMinuscolo) || nomeCampo;
     }
 
-    // Pulizia completa di stringhe (rimuove virgolette residue ed eventuali spazi attorno)
     function pulisciTesto(str) {
       if (!str) return "";
       return String(str).replace(/^"+|"+$/g, '').trim();
@@ -158,7 +174,6 @@
       fetch(BASE_URL + "?nocache=" + Date.now())
         .then(r => r.text())
         .then(testo => {
-          // Uso di PapaParse per rimuovere nativamente qualsiasi virgoletta dal CSV
           const parsed = Papa.parse(testo.trim(), {
             delimiter: ";",
             header: true,
@@ -242,6 +257,9 @@
 
     async function avviaConfigurazione() {
         try {
+            const utente = sessionStorage.getItem("currentUser") || "Utente";
+            document.getElementById("nomeUtenteLogged").textContent = utente;
+
             const res = await fetch("config.json?nocache=" + Date.now());
             if (!res.ok) throw new Error("Impossibile caricare la configurazione");
             const config = await res.json();
@@ -249,6 +267,11 @@
             BASE_URL = config.BASE_URL;
             URL_OPTIONAL = config.URL_OPTIONAL;
             URL_SCHEDE_PDF = config.URL_SCHEDE_PDF;
+            URL_LOG_SCRIPT = config.URL_LOG_SCRIPT || "";
+
+            if (URL_LOG_SCRIPT) {
+                sessionStorage.setItem("URL_LOG_SCRIPT", URL_LOG_SCRIPT);
+            }
 
             caricaDati();
             caricaOptional();
@@ -259,6 +282,70 @@
         }
     }
 
+    // Logout manuale
+    async function logout() {
+        const utente = sessionStorage.getItem("currentUser") || "Utente";
+        const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+        if (logUrl) {
+            try {
+                await fetch(logUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ utente: utente, note: "Disconnessione (Logout)" })
+                });
+            } catch(e) {
+                console.error("Log logout non inviato:", e);
+            }
+        }
+
+        sessionStorage.clear();
+        window.location.href = "index.html";
+    }
+
+    // Invio log generico per attivita (filtri, ricerche, prenotazioni, pdf)
+    async function inviaLogAttivita(testoNota) {
+        const utente = sessionStorage.getItem("currentUser") || "Utente";
+        const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+        if (logUrl) {
+            try {
+                fetch(logUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ utente: utente, note: testoNota })
+                });
+            } catch(e) {
+                console.error("Log attivita non inviato:", e);
+            }
+        }
+    }
+
+    // Tracciamento affidabile per chiusura scheda/browser
+    function tracciaChiusura() {
+        const utente = sessionStorage.getItem("currentUser");
+        const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+        
+        if (utente && logUrl) {
+            const payload = JSON.stringify({ utente: utente, note: "Chiusura scheda / abbandono pagina" });
+            if (navigator.sendBeacon) {
+                const blob = new Blob([payload], { type: "text/plain;charset=UTF-8" });
+                navigator.sendBeacon(logUrl, blob);
+            } else {
+                fetch(logUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: payload,
+                    keepalive: true
+                });
+            }
+        }
+    }
+
+    window.addEventListener("pagehide", tracciaChiusura);
+    window.addEventListener("beforeunload", tracciaChiusura);
+
     window.onload = () => {
         avviaConfigurazione();
     };
@@ -267,7 +354,8 @@
       const modal = document.getElementById("dettagliModal");
       const contenuto = document.getElementById("contenutoDettagli");
 
-      let htmlSinistra = `<h2>Veicolo ID ${veicolo.id_veicolo || "N/D"}</h2><ul class="lista-dettagli">`;
+      const idVeicolo = veicolo.id_veicolo || "N/D";
+      let htmlSinistra = `<h2>Veicolo ID ${idVeicolo}</h2><ul class="lista-dettagli">`;
       const campiDaNascondereDettaglio = new Set([
         "cod_modello_vp", "famiglia_iveco", "versione", "data_inserimento_ordine",
         "data_arrivo", "data_prenotazione", "descr_fdp", "cod_fdp",
@@ -286,9 +374,9 @@
       });
       htmlSinistra += `</ul>`;
 
-      const urlSchedaPdf = schedePdf[String(veicolo.id_veicolo || "").trim()];
+      const urlSchedaPdf = schedePdf[String(idVeicolo).trim()];
       if (urlSchedaPdf) {
-        htmlSinistra += `<p style="margin-top:16px"><a href="${urlSchedaPdf}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 14px;background:#1769aa;color:white;text-decoration:none;border-radius:6px;font-weight:bold">📄 Dettagli allestimento</a></p>`;
+        htmlSinistra += `<p style="margin-top:16px"><a href="${urlSchedaPdf}" target="_blank" rel="noopener noreferrer" onclick="inviaLogAttivita('Apertura/Download Dettagli Allestimento PDF - Veicolo ID: ${idVeicolo}')" style="display:inline-block;padding:10px 14px;background:#1769aa;color:white;text-decoration:none;border-radius:6px;font-weight:bold">📄 Dettagli allestimento</a></p>`;
       }
 
       let htmlDestra = "";
@@ -395,6 +483,7 @@
 
           if (col.whatsapp) {
             const van = String(r[chiaveCampo(r, "VAN")] || "").trim();
+            const idVeicolo = String(r[chiaveCampo(r, "id_veicolo")] || "").trim();
             if (van) {
               const messaggio = `ciao, mi potresti prenotare il VAN ${van}`;
               const linkWhatsApp = document.createElement("a");
@@ -403,13 +492,20 @@
               linkWhatsApp.rel = "noopener noreferrer";
               linkWhatsApp.textContent = "💬 Prenota";
               linkWhatsApp.style.cssText = "display:inline-block;padding:6px 9px;background:#25D366;color:#fff;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
-              linkWhatsApp.addEventListener("click", ev => ev.stopPropagation());
+              
+              // Traccia il click su Prenota WhatsApp
+              linkWhatsApp.addEventListener("click", ev => {
+                ev.stopPropagation();
+                inviaLogAttivita(`Prenotazione WhatsApp cliccata - VAN: ${van} (ID: ${idVeicolo})`);
+              });
+
               td.appendChild(linkWhatsApp);
             } else {
               td.textContent = "—";
             }
           } else if (col.scheda) {
-            const urlSchedaPdf = schedePdf[String(r[chiaveCampo(r, "id_veicolo")] || "").trim()];
+            const idVeicolo = String(r[chiaveCampo(r, "id_veicolo")] || "").trim();
+            const urlSchedaPdf = schedePdf[idVeicolo];
             if (urlSchedaPdf) {
               const link = document.createElement("a");
               link.href = urlSchedaPdf;
@@ -417,7 +513,13 @@
               link.rel = "noopener noreferrer";
               link.textContent = "📄 Apri";
               link.style.cssText = "display:inline-block;padding:5px 9px;background:#1769aa;color:white;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
-              link.addEventListener("click", ev => ev.stopPropagation());
+              
+              // Traccia il click sul PDF dalla tabella principale
+              link.addEventListener("click", ev => {
+                ev.stopPropagation();
+                inviaLogAttivita(`Apertura/Download Dettagli Allestimento PDF - Veicolo ID: ${idVeicolo}`);
+              });
+
               td.appendChild(link);
             } else {
               td.textContent = "—";
@@ -493,6 +595,7 @@
       const filtriNodo = document.getElementById("filtri-attivi");
       filtriNodo.innerHTML = "";
       let arr = [...dati];
+      let descrizioniFiltri = [];
 
       document.querySelectorAll(".filtri select").forEach(sel => {
         const idx = parseInt(sel.getAttribute("data-col-index"), 10);
@@ -500,6 +603,8 @@
         const selvals = Array.from(sel.selectedOptions).map(o => o.value);
         if (selvals.length > 0) {
           arr = arr.filter(r => selvals.includes(r[col]));
+          descrizioniFiltri.push(`${col}: [${selvals.join(", ")}]`);
+
           const badge = document.createElement("span");
           badge.className = "badge";
           badge.textContent = `${col}: ${selvals.join(", ")}`;
@@ -517,6 +622,13 @@
         }
       });
 
+      // Registra sempre l'azione nel log
+      if (descrizioniFiltri.length > 0) {
+        inviaLogAttivita("Filtro applicato: " + descrizioniFiltri.join(" | "));
+      } else {
+        inviaLogAttivita("Filtro applicato: (Nessun filtro selezionato - Mostra tutti)");
+      }
+
       aggiornaOpzioniFiltri();
       mostraTabella(arr);
       mostraMessaggio(`${arr.length} record trovati`);
@@ -527,6 +639,9 @@
         Array.from(s.options).forEach(o => o.selected = false);
       });
       document.getElementById("filtri-attivi").textContent = "";
+      
+      inviaLogAttivita("Reset filtri effettuato");
+
       aggiornaOpzioniFiltri();
       mostraTabella(dati);
       mostraMessaggio(`${dati.length} record trovati`);
@@ -540,7 +655,6 @@
       const mappaRiepilogo = {};
 
       datiCorrenti.forEach(r => {
-        // CORRETTO: Recupera tipo_veicolo (non tipo_allestimento)
         const tipoVeicolo = r[chiaveCampo(r, "tipo_veicolo")]?.trim() || "—";
         const descrizione = r[chiaveCampo(r, "descrizione")]?.trim() || "N/D";
         const status = r[chiaveCampo(r, "descri_status")]?.trim() || "N/D";
@@ -563,21 +677,17 @@
         const gruppo = mappaRiepilogo[chiaveGroup];
         gruppo.totale += 1;
 
-        // Conteggio di cui Status
         gruppo.status_map[status] = (gruppo.status_map[status] || 0) + 1;
 
-        // Conteggio di cui Prenotati
         if (prenotatoDa !== "") {
           gruppo.prenotati += 1;
         }
 
-        // Conteggio di cui Allestiti (se tipo_allestimento è valorizzato)
         if (tipoAllestimento !== "" && tipoAllestimento !== "—") {
           gruppo.allestiti += 1;
         }
       });
 
-      // Ordinamento 1: tipo_veicolo (alfabetico), Ordinamento 2: descrizione (alfabetico)
       const listaOrdinata = Object.values(mappaRiepilogo).sort((a, b) => {
         const compTipo = a.tipo_veicolo.localeCompare(b.tipo_veicolo, "it");
         if (compTipo !== 0) return compTipo;
