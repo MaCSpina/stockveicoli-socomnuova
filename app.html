@@ -282,7 +282,7 @@
         }
     }
 
-    // Logout manuale
+    // Logout manuale con tracciamento dispositivo
     async function logout() {
         const utente = sessionStorage.getItem("currentUser") || "Utente";
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
@@ -292,7 +292,11 @@
                     method: "POST",
                     mode: "no-cors",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ utente: utente, note: "Disconnessione (Logout)" })
+                    body: JSON.stringify({ 
+                        utente: utente, 
+                        note: "Disconnessione (Logout)",
+                        dispositivo: navigator.userAgent 
+                    })
                 });
             } catch(e) {
                 console.error("Log logout non inviato:", e);
@@ -303,7 +307,7 @@
         window.location.href = "index.html";
     }
 
-    // Invio log generico per attivita (filtri, ricerche, prenotazioni, pdf)
+    // Invio log generico con tracciamento dispositivo
     async function inviaLogAttivita(testoNota) {
         const utente = sessionStorage.getItem("currentUser") || "Utente";
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
@@ -313,7 +317,11 @@
                     method: "POST",
                     mode: "no-cors",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ utente: utente, note: testoNota })
+                    body: JSON.stringify({ 
+                        utente: utente, 
+                        note: testoNota,
+                        dispositivo: navigator.userAgent 
+                    })
                 });
             } catch(e) {
                 console.error("Log attivita non inviato:", e);
@@ -321,13 +329,17 @@
         }
     }
 
-    // Tracciamento affidabile per chiusura scheda/browser
+    // Tracciamento affidabile per chiusura scheda/browser con dispositivo
     function tracciaChiusura() {
         const utente = sessionStorage.getItem("currentUser");
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
         
         if (utente && logUrl) {
-            const payload = JSON.stringify({ utente: utente, note: "Chiusura scheda / abbandono pagina" });
+            const payload = JSON.stringify({ 
+                utente: utente, 
+                note: "Chiusura scheda / abbandono pagina",
+                dispositivo: navigator.userAgent 
+            });
             if (navigator.sendBeacon) {
                 const blob = new Blob([payload], { type: "text/plain;charset=UTF-8" });
                 navigator.sendBeacon(logUrl, blob);
@@ -493,7 +505,6 @@
               linkWhatsApp.textContent = "💬 Prenota";
               linkWhatsApp.style.cssText = "display:inline-block;padding:6px 9px;background:#25D366;color:#fff;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
               
-              // Traccia il click su Prenota WhatsApp
               linkWhatsApp.addEventListener("click", ev => {
                 ev.stopPropagation();
                 inviaLogAttivita(`Prenotazione WhatsApp cliccata - VAN: ${van} (ID: ${idVeicolo})`);
@@ -514,7 +525,6 @@
               link.textContent = "📄 Apri";
               link.style.cssText = "display:inline-block;padding:5px 9px;background:#1769aa;color:white;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
               
-              // Traccia il click sul PDF dalla tabella principale
               link.addEventListener("click", ev => {
                 ev.stopPropagation();
                 inviaLogAttivita(`Apertura/Download Dettagli Allestimento PDF - Veicolo ID: ${idVeicolo}`);
@@ -622,7 +632,6 @@
         }
       });
 
-      // Registra sempre l'azione nel log
       if (descrizioniFiltri.length > 0) {
         inviaLogAttivita("Filtro applicato: " + descrizioniFiltri.join(" | "));
       } else {
