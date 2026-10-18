@@ -93,6 +93,23 @@
 }
 .tabella-optional th, .tabella-riepilogo th { background-color: #003366; color: #ffffff; }
 
+/* Ottimizzazione specifica per il Riepilogo Stock su Smartphone */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95% !important;
+    margin: 2% auto !important;
+    padding: 12px !important;
+    max-height: 88vh !important;
+  }
+  .tabella-riepilogo {
+    font-size: 12px !important;
+  }
+  .tabella-riepilogo th, .tabella-riepilogo td {
+    padding: 6px 4px !important;
+    word-break: break-word;
+  }
+}
+
 .modale-doppia-colonna { display: flex; flex-wrap: wrap; gap: 20px; max-height: 80vh; overflow-y: auto; }
 .colonna-sinistra, .colonna-destra { flex: 1 1 45%; font-size: 14px; }
 .optional-wrapper { break-inside: avoid; page-break-inside: avoid; }
