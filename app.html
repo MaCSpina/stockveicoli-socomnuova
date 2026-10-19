@@ -185,6 +185,20 @@
 
     function formattaData(str) {
       if (!str) return "";
+      str = String(str).trim();
+      
+      // Se la data è già nel formato GG/MM/AAAA o simile con slash
+      if (str.includes("/")) {
+        const parti = str.split(" ")[0].split("/"); // Prende solo la parte della data prima dell'orario se presente
+        if (parti.length === 3) {
+          const gg = parti[0].padStart(2, '0');
+          const mm = parti[1].padStart(2, '0');
+          const yyyy = parti[2];
+          return `${gg}/${mm}/${yyyy}`;
+        }
+      }
+      
+      // Fallback standard se il formato dovesse essere diverso
       const d = new Date(str);
       if (isNaN(d)) return str;
       const gg = String(d.getDate()).padStart(2,'0'),
