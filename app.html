@@ -167,12 +167,19 @@
       .then(data => { ipUtentePubblico = data.ip; })
       .catch(() => { ipUtentePubblico = "Non rilevato"; });
 
+    // Campi esclusi dai filtri (incluse le versioni esatte dal CSV)
     const campiEsclusiFiltri = [
-      "data_prenotazione","id_veicolo","VAN","telaio","versione","data_inserimento_ordine","data_arrivo","giorni_giacenza","data_arrivo_prevista","scadenza_prenot","cod_gomme_specifico","descr_gomme_specifico","cod_gomme_generico","descr_gomme_generico","data_ins_OCF","larghezza","listino_originale","prezzo_versione","prezzo_opt","cod_fdp2","aggiornamento_stock","cod_modello_vp","cod_tipologia_allestimento",
-      // Variazioni abbreviate o alternative per sicurezza esclusione filtri
-      "data_inserimento_ord", "data_arr", "data_arrivo_prev", "data_prenot"
+      "id_veicolo", "VAN", "telaio", "versione", "giorni_giacenza",
+      "cod_gomme_specifico", "descr_gomme_specifico", "cod_gomme_generico", "descr_gomme_generico",
+      "larghezza", "listino_originale", "prezzo_versione", "prezzo_opt", "cod_fdp2",
+      "aggiornamento_stock", "cod_modello_vp", "cod_tipologia_allestimento",
+      // Date esatte del CSV da escludere dai filtri
+      "data_inserimento_ord", "data_arr", "data_arrivo_prev", "data_prenot", "scadenza_pren", "data_ins_OCF"
     ];
-    const campiDate = ["data_prenotazione","data_inserimento_ordine","data_arrivo","data_ins_OCF","data_arrivo_prevista","scadenza_prenot"];
+
+    // Campi data esatti dal CSV da formattare
+    const campiDate = ["data_inserimento_ord", "data_arr", "data_arrivo_prev", "data_prenot", "scadenza_pren", "data_ins_OCF"];
+
     let intestazione = [], dati = [], datiCorrenti = []; 
     let optionalDati = []; let schedePdf = {};
 
@@ -397,8 +404,8 @@
       const idVeicolo = veicolo.id_veicolo || "N/D";
       let htmlSinistra = `<h2>Veicolo ID ${idVeicolo}</h2><ul class="lista-dettagli">`;
       const campiDaNascondereDettaglio = new Set([
-        "cod_modello_vp", "famiglia_iveco", "versione", "data_inserimento_ordine",
-        "data_arrivo", "data_prenotazione", "descr_fdp", "cod_fdp",
+        "cod_modello_vp", "famiglia_iveco", "versione", "data_inserimento_ord",
+        "data_arr", "data_prenot", "descr_fdp", "cod_fdp",
         "listino_originale", "prezzo_versione", "prezzo_opt",
         "cod_tipologia_allestimento", "cod_fdp2", "aggiornamento_stock"
       ]);
@@ -459,31 +466,32 @@
 
     function mostraTabella(arr) {
       datiCorrenti = arr; 
+      // Colonne tabella principale con i nomi esatti del CSV
       const colonneTabella = [
         { label: "id_veicolo", campo: "id_veicolo" },
         { label: "descrizione", campo: "descrizione" },
         { label: "des_colore", campo: "des_colore" },
         { label: "VAN", campo: "VAN" },
         { label: "Prenota via WhatsApp", whatsapp: true },
-        { label: "TELAIO", campo: "TELAIO" },
+        { label: "TELAIO", campo: "telaio" },
         { label: "descri_status", campo: "descri_status" },
         { label: "stato_avanz_ordine", campo: "stato_avanz_ordine" },
         { label: "giorni_giacenza", campo: "giorni_giacenza" },
-        { label: "data_arrivo_prevista", campo: "data_arrivo_prevista" },
+        { label: "data_arrivo_prev", campo: "data_arrivo_prev" },
         { label: "descr_passo", campo: "descr_passo" },
         { label: "note", campo: "note" },
         { label: "tipo_allestimento", campo: "tipo_allestimento" },
         { label: "Dettagli allestimento", scheda: true },
         { label: "prezzo_vendita_web", campo: "prezzo_vendita_web" },
         { label: "prenotato_da", campo: "prenotato_da" },
-        { label: "scadenza_prenot", campo: "scadenza_prenot" },
+        { label: "scadenza_pren", campo: "scadenza_pren" },
         { label: "nota_pren", campo: "nota_pren" }
       ];
 
       const campiInGrassetto = new Set([
         "descrizione", "descri_status", "stato_avanz_ordine",
-        "data_arrivo_prevista", "tipo_allestimento", "prezzo_vendita_web",
-        "prenotato_da", "scadenza_prenot", "nota_pren"
+        "data_arrivo_prev", "tipo_allestimento", "prezzo_vendita_web",
+        "prenotato_da", "scadenza_pren", "nota_pren"
       ]);
 
       function formattaPrezzoEuro(valore) {
