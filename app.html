@@ -35,9 +35,10 @@
     .btn-riepilogo { padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #16803c; color: white; border: none; border-radius: 5px; font-weight: bold; }
     .btn-riepilogo:hover { background: #126530; }
 
-    #filtri-attivi { margin-bottom: 15px; font-style: italic; color: #00cc66; font-weight: bold; }
-    .badge { background: #333; padding: 4px 8px; border-radius: 12px; margin-right: 8px; display: inline-flex; align-items: center; color: #fff; }
-    .badge button { border: none; background: none; margin-left: 6px; cursor: pointer; font-weight: bold; color: #fff; }
+    #filtri-attivi { margin-bottom: 15px; font-style: italic; color: #ffcccc; font-weight: bold; }
+    .badge { background: #d32f2f; padding: 4px 8px; border-radius: 12px; margin-right: 8px; display: inline-flex; align-items: center; color: #fff; font-weight: bold; }
+    .badge button { border: none; background: none; margin-left: 6px; cursor: pointer; font-weight: bold; color: #fff; font-size: 14px; }
+    
     .toolbar { margin-bottom: 15px; }
     .toolbar button { margin-right: 10px; padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #0055aa; color: white; border: none; border-radius: 5px; }
     .toolbar button:hover { background: #004080; }
@@ -143,10 +144,10 @@
       <button onclick="caricaDati()">Aggiorna</button>
     </div>
 
-    <!-- Record trovati e pulsante Riepilogo -->
+    <!-- Record trovati e pulsante Riepilogo Selezione -->
     <div class="status-bar">
       <div id="msg"></div>
-      <button class="btn-riepilogo" onclick="apriRiepilogo()">📊 Riepilogo Stock</button>
+      <button class="btn-riepilogo" onclick="apriRiepilogo()">📊 Riepilogo Selezione</button>
     </div>
 
     <div id="filtri-attivi"></div>
@@ -167,13 +168,12 @@
       .then(data => { ipUtentePubblico = data.ip; })
       .catch(() => { ipUtentePubblico = "Non rilevato"; });
 
-    // Campi esclusi dai filtri (incluse le versioni esatte dal CSV)
+    // Campi esclusi dai filtri
     const campiEsclusiFiltri = [
       "id_veicolo", "VAN", "telaio", "versione", "giorni_giacenza",
       "cod_gomme_specifico", "descr_gomme_specifico", "cod_gomme_generico", "descr_gomme_generico",
       "larghezza", "listino_originale", "prezzo_versione", "prezzo_opt", "cod_fdp2",
       "aggiornamento_stock", "cod_modello_vp", "cod_tipologia_allestimento",
-      // Date esatte del CSV da escludere dai filtri
       "data_inserimento_ord", "data_arr", "data_arrivo_prev", "data_prenot", "scadenza_pren", "data_ins_OCF"
     ];
 
@@ -187,9 +187,8 @@
       if (!str) return "";
       str = String(str).trim();
       
-      // Se la data è già nel formato GG/MM/AAAA o simile con slash
       if (str.includes("/")) {
-        const parti = str.split(" ")[0].split("/"); // Prende solo la parte della data prima dell'orario se presente
+        const parti = str.split(" ")[0].split("/");
         if (parti.length === 3) {
           const gg = parti[0].padStart(2, '0');
           const mm = parti[1].padStart(2, '0');
@@ -198,7 +197,6 @@
         }
       }
       
-      // Fallback standard se il formato dovesse essere diverso
       const d = new Date(str);
       if (isNaN(d)) return str;
       const gg = String(d.getDate()).padStart(2,'0'),
@@ -480,7 +478,6 @@
 
     function mostraTabella(arr) {
       datiCorrenti = arr; 
-      // Colonne tabella principale con i nomi esatti del CSV
       const colonneTabella = [
         { label: "id_veicolo", campo: "id_veicolo" },
         { label: "descrizione", campo: "descrizione" },
@@ -706,7 +703,7 @@
       mostraMessaggio(`${dati.length} record trovati`);
     }
 
-    // --- TABELLA DI RIEPILOGO STOCK ---
+    // --- TABELLA DI RIEPILOGO SELEZIONE ---
     function apriRiepilogo() {
       const modal = document.getElementById("riepilogoModal");
       const cont = document.getElementById("contenutoRiepilogo");
@@ -851,11 +848,11 @@
     </div>
   </div>
 
-  <!-- Modale per il Riepilogo Stock -->
+  <!-- Modale per il Riepilogo Selezione -->
   <div id="riepilogoModal" class="modal-overlay">
     <div class="modal-content">
       <button onclick="document.getElementById('riepilogoModal').style.display='none'" style="float:right; border:0; background:#ccc; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">Chiudi ×</button>
-      <h2>Riepilogo Stock</h2>
+      <h2>Riepilogo Selezione</h2>
       <div id="contenutoRiepilogo"></div>
     </div>
   </div>
