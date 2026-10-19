@@ -167,7 +167,11 @@
       .then(data => { ipUtentePubblico = data.ip; })
       .catch(() => { ipUtentePubblico = "Non rilevato"; });
 
-    const campiEsclusiFiltri = ["data_prenotazione","id_veicolo","VAN","telaio","versione","data_inserimento_ordine","data_arrivo","giorni_giacenza","data_arrivo_prevista","scadenza_prenot","cod_gomme_specifico","descr_gomme_specifico","cod_gomme_generico","descr_gomme_generico","data_ins_OCF","larghezza","listino_originale","prezzo_versione","prezzo_opt","cod_fdp2","aggiornamento_stock","cod_modello_vp","cod_tipologia_allestimento"];
+    const campiEsclusiFiltri = [
+      "data_prenotazione","id_veicolo","VAN","telaio","versione","data_inserimento_ordine","data_arrivo","giorni_giacenza","data_arrivo_prevista","scadenza_prenot","cod_gomme_specifico","descr_gomme_specifico","cod_gomme_generico","descr_gomme_generico","data_ins_OCF","larghezza","listino_originale","prezzo_versione","prezzo_opt","cod_fdp2","aggiornamento_stock","cod_modello_vp","cod_tipologia_allestimento",
+      // Variazioni abbreviate o alternative per sicurezza esclusione filtri
+      "data_inserimento_ord", "data_arr", "data_arrivo_prev", "data_prenot"
+    ];
     const campiDate = ["data_prenotazione","data_inserimento_ordine","data_arrivo","data_ins_OCF","data_arrivo_prevista","scadenza_prenot"];
     let intestazione = [], dati = [], datiCorrenti = []; 
     let optionalDati = []; let schedePdf = {};
