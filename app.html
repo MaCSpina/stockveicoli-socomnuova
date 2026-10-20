@@ -220,11 +220,11 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
 
-// Apri PDF direttamente in modale interna per evitare schermate bianche su PWA iOS/Android
+// Apri PDF direttamente in modale interna con opzione di download dedicata per iOS/Android
 function apriPdfOttimizzato(urlOriginale) {
   if (!urlOriginale) return;
 
-  const urlEmbed = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
+  const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
   
   // Crea o recupera la modale per il visualizzatore PDF
   let pdfModal = document.getElementById("pdfViewerModal");
@@ -234,9 +234,12 @@ function apriPdfOttimizzato(urlOriginale) {
     pdfModal.className = "modal-overlay";
     pdfModal.innerHTML = `
       <div class="modal-content" style="height: 90vh; max-height: 90vh; display: flex; flex-direction: column; padding: 15px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
           <h3 style="margin:0; font-size: 1.1em; color: #123e63;">📄 Dettagli Allestimento PDF</h3>
-          <button onclick="chiudiPdfModale()" style="background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Chiudi ×</button>
+          <div style="display: flex; gap: 8px;">
+            <a id="btnDownloadPdf" href="#" target="_blank" rel="noopener noreferrer" style="background: #16803c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; text-decoration: none; font-size: 0.9em; display: inline-flex; align-items: center;">📥 Scarica / Salva</a>
+            <button onclick="chiudiPdfModale()" style="background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Chiudi ×</button>
+          </div>
         </div>
         <div style="flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 6px; border: 1px solid #ccc;">
           <iframe id="pdfIframe" style="width: 100%; height: 100%; border: none;" src="about:blank"></iframe>
@@ -246,8 +249,13 @@ function apriPdfOttimizzato(urlOriginale) {
     document.body.appendChild(pdfModal);
   }
 
+  // Configura l'iframe e il pulsante di download
   const iframe = document.getElementById("pdfIframe");
-  iframe.src = urlEmbed;
+  const btnDownload = document.getElementById("btnDownloadPdf");
+  
+  iframe.src = urlViewer;
+  btnDownload.href = urlOriginale;
+
   pdfModal.style.display = "block";
 }
 
@@ -257,7 +265,8 @@ function chiudiPdfModale() {
   if (iframe) iframe.src = "about:blank"; // Pulisce la memoria
   if (pdfModal) pdfModal.style.display = "none";
 }
-    // --- TIMEOUT DI INATTIVITÀ (1 ORA) ---
+	  
+	  // --- TIMEOUT DI INATTIVITÀ (1 ORA) ---
     const TIMEOUT_INATTIVITA_MS = 60 * 60 * 1000; // 1 Ora in millisecondi
     let timerInattivita;
 
