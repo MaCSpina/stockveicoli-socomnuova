@@ -187,7 +187,6 @@
 
   <main>
     <div class="toolbar">
-      <button onclick="applicaFiltro()">Applica Filtro</button>
       <button onclick="resettaFiltro()">Reset Filtro</button>
       <button onclick="caricaDati()">Aggiorna</button>
     </div>
@@ -220,6 +219,14 @@
     let URL_SCHEDE_PDF = "";
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
+
+    // Funzione helper per aprire i PDF senza generare la pagina bianca nella PWA
+    function apriPdfOttimizzato(urlOriginale) {
+      if (!urlOriginale) return;
+      // Se il link e un URL diretto, usiamo Google Viewer per consentire la visualizzazione senza schermata bianca
+      const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
+      window.open(urlViewer, '_blank');
+    }
 
     // --- TIMEOUT DI INATTIVITÀ (1 ORA) ---
     const TIMEOUT_INATTIVITA_MS = 60 * 60 * 1000; // 1 Ora in millisecondi
@@ -536,7 +543,7 @@
 
       const urlSchedaPdf = schedePdf[String(idVeicolo).trim()];
       if (urlSchedaPdf) {
-        htmlSinistra += `<p style="margin-top:16px"><a href="${urlSchedaPdf}" target="_blank" rel="noopener noreferrer" onclick="inviaLogAttivita('Apertura/Download Dettagli Allestimento PDF - Veicolo ID: ${idVeicolo}')" style="display:inline-block;padding:10px 14px;background:#1769aa;color:white;text-decoration:none;border-radius:6px;font-weight:bold">📄 Dettagli allestimento</a></p>`;
+        htmlSinistra += `<p style="margin-top:16px"><button onclick="inviaLogAttivita('Apertura/Download Dettagli Allestimento PDF - Veicolo ID: ${idVeicolo}'); apriPdfOttimizzato('${urlSchedaPdf}');" style="padding:10px 14px;background:#1769aa;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer">📄 Dettagli allestimento</button></p>`;
       }
 
       let htmlDestra = "";
@@ -680,19 +687,17 @@
             const idVeicolo = String(r[chiaveCampo(r, "id_veicolo")] || "").trim();
             const urlSchedaPdf = schedePdf[idVeicolo];
             if (urlSchedaPdf) {
-              const link = document.createElement("a");
-              link.href = urlSchedaPdf;
-              link.target = "_blank";
-              link.rel = "noopener noreferrer";
-              link.textContent = "📄 Apri";
-              link.style.cssText = "display:inline-block;padding:5px 9px;background:#1769aa;color:white;text-decoration:none;border-radius:5px;font-weight:bold;white-space:nowrap";
+              const btnPdf = document.createElement("button");
+              btnPdf.textContent = "📄 Apri";
+              btnPdf.style.cssText = "display:inline-block;padding:5px 9px;background:#1769aa;color:white;border:none;border-radius:5px;font-weight:bold;white-space:nowrap;cursor:pointer";
               
-              link.addEventListener("click", ev => {
+              btnPdf.addEventListener("click", ev => {
                 ev.stopPropagation();
                 inviaLogAttivita(`Apertura/Download Dettagli Allestimento PDF - Veicolo ID: ${idVeicolo}`);
+                apriPdfOttimizzato(urlSchedaPdf);
               });
 
-              td.appendChild(link);
+              td.appendChild(btnPdf);
             } else {
               td.textContent = "—";
             }
