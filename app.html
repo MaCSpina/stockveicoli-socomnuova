@@ -220,13 +220,23 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
 
-    // Funzione helper per aprire i PDF senza generare la pagina bianca nella PWA
-    function apriPdfOttimizzato(urlOriginale) {
-      if (!urlOriginale) return;
-      // Se il link e un URL diretto, usiamo Google Viewer per consentire la visualizzazione senza schermata bianca
-      const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
-      window.open(urlViewer, '_blank');
-    }
+// Funzione universale per iOS/Android per aprire PDF senza pagine bianche nè account
+function apriPdfOttimizzato(urlOriginale) {
+  if (!urlOriginale) return;
+
+  // Rileva se l'utente è su iOS / iPhone / iPad
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  if (isIOS) {
+    // Su iOS/Safari apriamo direttamente il link in una nuova finestra
+    // Safari gestisce i PDF in modo nativo e fluidissimo senza schermate bianche
+    window.open(urlOriginale, '_blank');
+  } else {
+    // Per Android/PWA usiamo il visualizzatore universale aperto (senza login richiesto)
+    const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
+    window.open(urlViewer, '_blank');
+  }
+}
 
     // --- TIMEOUT DI INATTIVITÀ (1 ORA) ---
     const TIMEOUT_INATTIVITA_MS = 60 * 60 * 1000; // 1 Ora in millisecondi
