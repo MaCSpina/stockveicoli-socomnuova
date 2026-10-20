@@ -20,9 +20,35 @@
     .btn-logout { background: #d32f2f; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold; }
     .btn-logout:hover { background: #b71c1c; }
 
+    /* Filtri a Caselle di Spunta (Checkbox box unificati) */
     .filtri { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
-    .filtro { display: flex; flex-direction: column; min-width: 150px; }
-    select { min-height: 80px; background: #f8f8f8; border: 1px solid #ccc; border-radius: 5px; white-space: normal; }
+    .filtro { display: flex; flex-direction: column; min-width: 180px; flex: 1; max-width: 300px; }
+    .filtro-box {
+      background: #f8f8f8;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      max-height: 120px;
+      overflow-y: auto;
+      padding: 8px 10px;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .filtro-box label {
+      font-weight: normal;
+      font-size: 0.9em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: #333;
+    }
+    .filtro-box input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
     
     /* Input di Ricerca Diretta */
     .search-container { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -69,8 +95,8 @@
   header { flex-direction: column; align-items: flex-start; }
   .user-badge-container { width: 100%; justify-content: space-between; box-sizing: border-box; }
   .filtri { flex-direction: column; }
-  .filtro { min-width: unset; width: 100%; }
-  select { min-height: 60px; }
+  .filtro { max-width: 100%; width: 100%; }
+  .filtro-box { max-height: 100px; }
   .search-input { max-width: 100%; }
   
   #tabella-container table, #tabella-container thead, #tabella-container tbody, #tabella-container th, #tabella-container td, #tabella-container tr { display: block; }
@@ -533,20 +559,34 @@
     }
 
     function creaFiltri() {
-      const div = document.getElementById("parametri"); div.innerHTML="";
-      intestazione.forEach((col,i) => {
+      const div = document.getElementById("parametri"); 
+      div.innerHTML = "";
+      
+      intestazione.forEach((col, i) => {
         if (campiEsclusiFiltri.includes(col)) return;
-        const sel = document.createElement("select");
-        sel.multiple = true;
-        sel.setAttribute("data-col-index", i);
-        [...new Set(dati.map(r=>r[col]).filter(Boolean))].sort().forEach(v=>{
-          const o = document.createElement("option"); o.value=v; o.textContent=v;
-          sel.append(o);
+
+        const valoriUnici = [...new Set(dati.map(r => r[col]).filter(Boolean))].sort();
+
+        const box = document.createElement("div");
+        box.className = "filtro-box";
+        box.setAttribute("data-col-index", i);
+
+        valoriUnici.forEach(v => {
+          const lbl = document.createElement("label");
+          const chk = document.createElement("input");
+          chk.type = "checkbox";
+          chk.value = v;
+          chk.onchange = () => applicaFiltro();
+          
+          lbl.appendChild(chk);
+          lbl.appendChild(document.createTextNode(v));
+          box.appendChild(lbl);
         });
+
         const l = document.createElement("label");
-        l.className="filtro";
-        l.innerHTML=`<strong>${col}</strong>`;
-        l.appendChild(sel);
+        l.className = "filtro";
+        l.innerHTML = `<strong>${col}</strong>`;
+        l.appendChild(box);
         div.appendChild(l);
       });
     }
@@ -691,18 +731,21 @@
     function mostraMessaggio(txt) { document.getElementById("msg").textContent = txt; }
 
     function aggiornaOpzioniFiltri() {
-      const selects = Array.from(document.querySelectorAll(".filtri select"));
-      selects.forEach(sel => {
-        const idx = parseInt(sel.getAttribute("data-col-index"), 10);
+      const boxes = Array.from(document.querySelectorAll(".filtro-box"));
+      boxes.forEach(box => {
+        const idx = parseInt(box.getAttribute("data-col-index"), 10);
         const col = intestazione[idx];
-        const selezionati = Array.from(sel.selectedOptions).map(o => o.value);
+        const checkboxes = Array.from(box.querySelectorAll("input[type='checkbox']"));
+        const selezionati = checkboxes.filter(chk => chk.checked).map(chk => chk.value);
+        
         let compatibili = [...dati];
-
-        selects.forEach(altro => {
-          if (altro === sel) return;
-          const idxAltro = parseInt(altro.getAttribute("data-col-index"), 10);
+        boxes.forEach(altroBox => {
+          if (altroBox === box) return;
+          const idxAltro = parseInt(altroBox.getAttribute("data-col-index"), 10);
           const colAltro = intestazione[idxAltro];
-          const valoriAltro = Array.from(altro.selectedOptions).map(o => o.value);
+          const valoriAltro = Array.from(altroBox.querySelectorAll("input[type='checkbox']"))
+                                   .filter(c => c.checked)
+                                   .map(c => c.value);
           if (valoriAltro.length) {
             compatibili = compatibili.filter(r => valoriAltro.includes(r[colAltro]));
           }
@@ -710,15 +753,15 @@
 
         const valoriDisponibili = new Set(compatibili.map(r => r[col]).filter(v => v !== undefined && v !== null && String(v) !== ""));
         selezionati.forEach(v => valoriDisponibili.add(v));
-        const ordinati = Array.from(valoriDisponibili).sort((a, b) => String(a).localeCompare(String(b), "it"));
-
-        sel.innerHTML = "";
-        ordinati.forEach(v => {
-          const opzione = document.createElement("option");
-          opzione.value = v;
-          opzione.textContent = v;
-          opzione.selected = selezionati.includes(v);
-          sel.appendChild(opzione);
+        
+        checkboxes.forEach(chk => {
+          const val = chk.value;
+          const lbl = chk.parentElement;
+          if (valoriDisponibili.has(val)) {
+            lbl.style.display = "flex";
+          } else {
+            lbl.style.display = "none";
+          }
         });
       });
     }
@@ -759,11 +802,12 @@
         filtriNodo.append(badgeRicerca);
       }
 
-      // 2. Filtri a Tendina
-      document.querySelectorAll(".filtri select").forEach(sel => {
-        const idx = parseInt(sel.getAttribute("data-col-index"), 10);
+      // 2. Filtri a Checkbox
+      document.querySelectorAll(".filtro-box").forEach(box => {
+        const idx = parseInt(box.getAttribute("data-col-index"), 10);
         const col = intestazione[idx];
-        const selvals = Array.from(sel.selectedOptions).map(o => o.value);
+        const selvals = Array.from(box.querySelectorAll("input[type='checkbox']:checked")).map(c => c.value);
+        
         if (selvals.length > 0) {
           arr = arr.filter(r => selvals.includes(r[col]));
           descrizioniFiltri.push(`${col}: [${selvals.join(", ")}]`);
@@ -775,8 +819,8 @@
           btn.textContent = "×";
           btn.title = "Rimuovi questo filtro";
           btn.onclick = () => {
-            selvals.forEach(v => {
-              for (const o of sel.options) if (o.value === v) o.selected = false;
+            box.querySelectorAll("input[type='checkbox']").forEach(chk => {
+              if (selvals.includes(chk.value)) chk.checked = false;
             });
             applicaFiltro();
           };
@@ -802,9 +846,10 @@
       const inputRicerca = document.getElementById("input-ricerca-diretta");
       if (inputRicerca) inputRicerca.value = "";
 
-      // 2. Deseleziona tutte le opzioni delle tendine
-      document.querySelectorAll(".filtri select").forEach(s => {
-        Array.from(s.options).forEach(o => o.selected = false);
+      // 2. Deseleziona tutte le checkbox
+      document.querySelectorAll(".filtro-box input[type='checkbox']").forEach(chk => {
+        chk.checked = false;
+        chk.parentElement.style.display = "flex";
       });
 
       // 3. Svuota i badge visibili
