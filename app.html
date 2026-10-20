@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-	<link rel="manifest" href="manifest.json">
-	<meta name="theme-color" content="#121e2d">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#121e2d" />
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <title>Socom Nuova Stock</title>
   <style>
@@ -24,6 +24,25 @@
     .filtro { display: flex; flex-direction: column; min-width: 150px; }
     select { min-height: 80px; background: #f8f8f8; border: 1px solid #ccc; border-radius: 5px; white-space: normal; }
     
+    /* Input di Ricerca Diretta */
+    .search-container { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .search-input {
+      padding: 10px 14px;
+      font-size: 15px;
+      border: 2px solid #0055aa;
+      border-radius: 6px;
+      width: 100%;
+      max-width: 350px;
+      background: #ffffff;
+      color: #333;
+      box-sizing: border-box;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: #00bfff;
+      box-shadow: 0 0 8px rgba(0, 191, 255, 0.4);
+    }
+
     /* Tabella Principale */
     #tabella-container table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; background: white; color: black; table-layout: auto; }
     #tabella-container th, #tabella-container td { border: 1px solid #ccc; padding: 6px; text-align: left; }
@@ -52,6 +71,7 @@
   .filtri { flex-direction: column; }
   .filtro { min-width: unset; width: 100%; }
   select { min-height: 60px; }
+  .search-input { max-width: 100%; }
   
   #tabella-container table, #tabella-container thead, #tabella-container tbody, #tabella-container th, #tabella-container td, #tabella-container tr { display: block; }
   #tabella-container thead { display: none; }
@@ -144,6 +164,17 @@
       <button onclick="applicaFiltro()">Applica Filtro</button>
       <button onclick="resettaFiltro()">Reset Filtro</button>
       <button onclick="caricaDati()">Aggiorna</button>
+    </div>
+
+    <!-- Campo Ricerca Diretta (VAN / Telaio / Testo) -->
+    <div class="search-container">
+      <input 
+        type="text" 
+        id="input-ricerca-diretta" 
+        class="search-input" 
+        placeholder="🔍 Cerca VAN, Telaio o Descrizione..." 
+        oninput="applicaFiltro()"
+      >
     </div>
 
     <!-- Record trovati e pulsante Riepilogo Selezione -->
@@ -656,6 +687,37 @@
       let arr = [...dati];
       let descrizioniFiltri = [];
 
+      // 1. Filtro da Ricerca Diretta (VAN, Telaio, Descrizione, ID Veicolo)
+      const testoRicerca = document.getElementById("input-ricerca-diretta")?.value.trim().toLowerCase() || "";
+      if (testoRicerca !== "") {
+        arr = arr.filter(r => {
+          const van = String(r[chiaveCampo(r, "VAN")] || "").toLowerCase();
+          const telaio = String(r[chiaveCampo(r, "telaio")] || "").toLowerCase();
+          const descrizione = String(r[chiaveCampo(r, "descrizione")] || "").toLowerCase();
+          const idVeicolo = String(r[chiaveCampo(r, "id_veicolo")] || "").toLowerCase();
+
+          return van.includes(testoRicerca) || 
+                 telaio.includes(testoRicerca) || 
+                 descrizione.includes(testoRicerca) || 
+                 idVeicolo.includes(testoRicerca);
+        });
+        descrizioniFiltri.push(`Ricerca diretta: "${testoRicerca}"`);
+
+        const badgeRicerca = document.createElement("span");
+        badgeRicerca.className = "badge";
+        badgeRicerca.textContent = `🔍 "${testoRicerca}"`;
+        const btnResetRicerca = document.createElement("button");
+        btnResetRicerca.textContent = "×";
+        btnResetRicerca.title = "Cancella ricerca";
+        btnResetRicerca.onclick = () => {
+          document.getElementById("input-ricerca-diretta").value = "";
+          applicaFiltro();
+        };
+        badgeRicerca.append(btnResetRicerca);
+        filtriNodo.append(badgeRicerca);
+      }
+
+      // 2. Filtri a Tendina
       document.querySelectorAll(".filtri select").forEach(sel => {
         const idx = parseInt(sel.getAttribute("data-col-index"), 10);
         const col = intestazione[idx];
@@ -683,8 +745,6 @@
 
       if (descrizioniFiltri.length > 0) {
         inviaLogAttivita("Filtro applicato: " + descrizioniFiltri.join(" | "));
-      } else {
-        inviaLogAttivita("Filtro applicato: (Nessun filtro selezionato - Mostra tutti)");
       }
 
       aggiornaOpzioniFiltri();
@@ -693,6 +753,9 @@
     }
 
     function resettaFiltro() {
+      const inputRicerca = document.getElementById("input-ricerca-diretta");
+      if (inputRicerca) inputRicerca.value = "";
+
       document.querySelectorAll(".filtri select").forEach(s => {
         Array.from(s.options).forEach(o => o.selected = false);
       });
