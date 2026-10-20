@@ -220,7 +220,7 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
 
-// Apri PDF direttamente in modale interna con opzione di download dedicata per iOS/Android
+// Apri PDF in modale interna e gestione download pulita senza schermate bianche su iOS
 function apriPdfOttimizzato(urlOriginale) {
   if (!urlOriginale) return;
 
@@ -237,7 +237,7 @@ function apriPdfOttimizzato(urlOriginale) {
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
           <h3 style="margin:0; font-size: 1.1em; color: #123e63;">📄 Dettagli Allestimento PDF</h3>
           <div style="display: flex; gap: 8px;">
-            <a id="btnDownloadPdf" href="#" target="_blank" rel="noopener noreferrer" style="background: #16803c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; text-decoration: none; font-size: 0.9em; display: inline-flex; align-items: center;">📥 Scarica / Salva</a>
+            <button id="btnDownloadPdf" onclick="scaricaPdfSicuro()" style="background: #16803c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.9em; display: inline-flex; align-items: center;">📥 Scarica / Salva</button>
             <button onclick="chiudiPdfModale()" style="background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Chiudi ×</button>
           </div>
         </div>
@@ -249,20 +249,58 @@ function apriPdfOttimizzato(urlOriginale) {
     document.body.appendChild(pdfModal);
   }
 
-  // Configura l'iframe e il pulsante di download
+  // Memorizziamo l'URL corrente del PDF per il pulsante di download
+  window._correntePdfUrl = urlOriginale;
+
   const iframe = document.getElementById("pdfIframe");
-  const btnDownload = document.getElementById("btnDownloadPdf");
-  
   iframe.src = urlViewer;
-  btnDownload.href = urlOriginale;
 
   pdfModal.style.display = "block";
+}
+
+// Funzione per scaricare il file senza aprire pagine bianche su iOS/PWA
+async function scaricaPdfSicuro() {
+  const url = window._correntePdfUrl;
+  if (!url) return;
+
+  // Se siamo su iOS / iPhone e supporta la condivisione nativa, usiamo quella (evita qualsiasi blocco)
+  if (navigator.share && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
+    try {
+      await navigator.share({
+        title: 'Scheda Allestimento Veicolo',
+        url: url
+      });
+      return;
+    } catch (e) {
+      // Se l'utente annulla la condivisione, proseguiamo con il download normale
+    }
+  }
+
+  // Tentativo di download tramite Blob invisibile (funziona se il server consente CORS)
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = blobUrl;
+    a.download = 'Allestimento_Veicolo.pdf';
+    document.body.appendChild(a);
+    a.click();
+    
+    window.URL.revokeObjectURL(blobUrl);
+    document.body.removeChild(a);
+  } catch (err) {
+    // Fallback estremo se il CORS blocca il fetch: apre il link in una nuova scheda pulita di Safari
+    window.open(url, '_system');
+  }
 }
 
 function chiudiPdfModale() {
   const pdfModal = document.getElementById("pdfViewerModal");
   const iframe = document.getElementById("pdfIframe");
-  if (iframe) iframe.src = "about:blank"; // Pulisce la memoria
+  if (iframe) iframe.src = "about:blank";
   if (pdfModal) pdfModal.style.display = "none";
 }
 	  
