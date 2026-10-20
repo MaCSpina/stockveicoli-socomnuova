@@ -795,16 +795,23 @@
     }
 
     function resettaFiltro() {
+      // 1. Svuota la ricerca diretta
       const inputRicerca = document.getElementById("input-ricerca-diretta");
       if (inputRicerca) inputRicerca.value = "";
 
+      // 2. Deseleziona tutte le opzioni delle tendine
       document.querySelectorAll(".filtri select").forEach(s => {
         Array.from(s.options).forEach(o => o.selected = false);
       });
-      document.getElementById("filtri-attivi").textContent = "";
+
+      // 3. Svuota i badge visibili
+      const filtriNodo = document.getElementById("filtri-attivi");
+      if (filtriNodo) filtriNodo.innerHTML = "";
       
+      // 4. Invia il log di reset attivita
       inviaLogAttivita("Reset filtri effettuato");
 
+      // 5. Ripristina i dati originari e aggiorna la tabella
       aggiornaOpzioniFiltri();
       mostraTabella(dati);
       mostraMessaggio(`${dati.length} record trovati`);
