@@ -785,8 +785,11 @@
         }
       });
 
+      // Invio tracciamento log sempre garantito
       if (descrizioniFiltri.length > 0) {
         inviaLogAttivita("Filtro applicato: " + descrizioniFiltri.join(" | "));
+      } else {
+        inviaLogAttivita("Filtro applicato: (Nessun filtro selezionato - Mostra tutti)");
       }
 
       aggiornaOpzioniFiltri();
