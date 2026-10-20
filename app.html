@@ -220,19 +220,37 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
 
-// Funzione universale per iOS/Android per aprire PDF senza pagine bianche nè account
+// Funzione universale per iOS (PWA/Standalone) e Android
 function apriPdfOttimizzato(urlOriginale) {
   if (!urlOriginale) return;
 
-  // Rileva se l'utente è su iOS / iPhone / iPad
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  // Rileva se l'app è eseguita come PWA / Aggiunta a Home Screen su iOS
+  const isStandaloneIOS = (window.navigator.standalone === true) || 
+                          (window.matchMedia('(display-mode: standalone)').matches && /iPad|iPhone|iPod/.test(navigator.userAgent));
 
-  if (isIOS) {
-    // Su iOS/Safari apriamo direttamente il link in una nuova finestra
-    // Safari gestisce i PDF in modo nativo e fluidissimo senza schermate bianche
-    window.open(urlOriginale, '_blank');
+  if (isStandaloneIOS) {
+    // Su PWA iOS, scarichiamo il file in memoria come Blob per prevenire la schermata bianca
+    fetch(urlOriginale)
+      .then(response => {
+        if (!response.ok) throw new Error("Errore nel recupero del PDF");
+        return response.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        // Apriamo il Blob URL che iOS gestisce nativamente senza blocchi o schermate bianche
+        const nuovaFinestra = window.open(blobUrl, '_blank');
+        if (!nuovaFinestra) {
+          window.location.href = blobUrl;
+        }
+      })
+      .catch(err => {
+        console.warn("Impossibile caricare Blob direttamente, fallback su Viewer:", err);
+        // Fallback sicuro su Google Viewer in caso di restrizioni CORS
+        const urlViewer = "https://docs.google.com/viewer?url=" + encodeURIComponent(urlOriginale);
+        window.open(urlViewer, '_system');
+      });
   } else {
-    // Per Android/PWA usiamo il visualizzatore universale aperto (senza login richiesto)
+    // Su Browser standard o Android, usiamo l'anteprima Google Viewer
     const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
     window.open(urlViewer, '_blank');
   }
