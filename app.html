@@ -195,6 +195,45 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
 
+    // --- TIMEOUT DI INATTIVITÀ (1 ORA) ---
+    const TIMEOUT_INATTIVITA_MS = 60 * 60 * 1000; // 1 Ora in millisecondi
+    let timerInattivita;
+
+    function resetTimerInattivita() {
+      clearTimeout(timerInattivita);
+      timerInattivita = setTimeout(logoutPerInattivita, TIMEOUT_INATTIVITA_MS);
+    }
+
+    async function logoutPerInattivita() {
+      const utente = sessionStorage.getItem("currentUser") || "Utente";
+      const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+      if (logUrl) {
+        try {
+          await fetch(logUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              utente: utente, 
+              note: "Disconnessione automatica per inattività (1 ora) | IP: " + ipUtentePubblico,
+              dispositivo: navigator.userAgent 
+            })
+          });
+        } catch(e) {
+          console.error("Log inattività non inviato:", e);
+        }
+      }
+
+      sessionStorage.clear();
+      alert("Sessione scaduta per inattività (1 ora). Verrai reindirizzato alla schermata di login.");
+      window.location.href = "index.html";
+    }
+
+    // Eventi che riazzerano il timer di inattività
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+      window.addEventListener(evt, resetTimerInattivita, true);
+    });
+
     // Ottiene l'IP pubblico dell'utente all'avvio
     fetch("https://api.ipify.org?format=json")
       .then(res => res.json())
@@ -356,6 +395,9 @@
             caricaDati();
             caricaOptional();
             caricaSchedePdf();
+            
+            // Avvia il timer di inattività
+            resetTimerInattivita();
         } catch (err) {
             console.error("Errore nel caricamento della configurazione protetta:", err);
             document.getElementById("msg").textContent = "Errore di connessione ai dati protetti.";
