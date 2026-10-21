@@ -246,6 +246,20 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
 
+    // Funzione per estrarre ed evidenziare il Model Year (MY) dalla descrizione
+    function estraiModelYear(descrizione) {
+      if (!descrizione) return null;
+      // Intercetta pattern come MY24, MY 24, MY2025, MY.25, MY 2026 (case-insensitive)
+      const regex = /MY[\s\.]*(\d{2,4})/i;
+      const match = descrizione.match(regex);
+      if (match) {
+        const annoStr = match[1];
+        const annoFormattato = annoStr.length === 2 ? "20" + annoStr : annoStr;
+        return `MY${annoFormattato.slice(-2)}`;
+      }
+      return null;
+    }
+
     // Apri PDF in modale interna e gestione download pulita senza schermate bianche su iOS
     function apriPdfOttimizzato(urlOriginale) {
       if (!urlOriginale) return;
@@ -819,12 +833,24 @@
             td.textContent = v;
             if (campiInGrassetto.has(col.campo.toLowerCase())) td.style.fontWeight = "bold";
 
-            if (col.campo.toLowerCase() === "descrizione" && String(r[chiaveCampo(r, "tipo_allestimento")] || "").trim()) {
-              const badge = document.createElement("span");
-              badge.textContent = "Pronta consegna";
-              badge.style.cssText = "display:inline-block;margin-left:7px;padding:3px 6px;background:#16803c;color:#fff;border-radius:4px;font-size:11px;font-weight:bold;white-space:nowrap";
-              td.appendChild(document.createTextNode(" "));
-              td.appendChild(badge);
+            // Gestione dei badge visivi nella colonna Descrizione (MY e Pronta Consegna)
+            if (col.campo.toLowerCase() === "descrizione") {
+              const modelYearTrovato = estraiModelYear(v);
+              if (modelYearTrovato) {
+                const badgeMy = document.createElement("span");
+                badgeMy.textContent = modelYearTrovato;
+                badgeMy.style.cssText = "display:inline-block;margin-left:7px;padding:3px 6px;background:#0284c7;color:#fff;border-radius:4px;font-size:11px;font-weight:bold;white-space:nowrap";
+                td.appendChild(document.createTextNode(" "));
+                td.appendChild(badgeMy);
+              }
+
+              if (String(r[chiaveCampo(r, "tipo_allestimento")] || "").trim()) {
+                const badge = document.createElement("span");
+                badge.textContent = "Pronta consegna";
+                badge.style.cssText = "display:inline-block;margin-left:7px;padding:3px 6px;background:#16803c;color:#fff;border-radius:4px;font-size:11px;font-weight:bold;white-space:nowrap";
+                td.appendChild(document.createTextNode(" "));
+                td.appendChild(badge);
+              }
             }
           }
           tr.appendChild(td);
