@@ -140,7 +140,7 @@
 
   <script>
     const GIST_ID = "3f99e0346bab2fe686f1ee8572be63f7";
-    const URL_GIST_CONTRATTI = "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/cdc95265dd99ab993a749aa07ebc371b30dafaf7/veicoli_contratti_in_arrivo.txt";
+    const URL_GIST_CONTRATTI = "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/veicoli_contratti_in_arrivo.txt";
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
 
@@ -270,7 +270,9 @@
     }
 
     function aggiornaDataUltimoModificaGist() {
-      fetch(`https://api.github.com/gists/${GIST_ID}`)
+      fetch(`https://api.github.com/gists/${GIST_ID}?t=` + Date.now(), {
+        headers: { "Cache-Control": "no-cache" }
+      })
         .then(res => res.json())
         .then(data => {
           if (data && data.updated_at) {
@@ -288,7 +290,12 @@
     }
 
     function caricaDatiContratti() {
-      fetch(URL_GIST_CONTRATTI + "?nocache=" + Date.now())
+      const urlForzato = URL_GIST_CONTRATTI + "?nocache=" + Date.now();
+
+      fetch(urlForzato, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" }
+      })
         .then(r => r.text())
         .then(testo => {
           const parsed = Papa.parse(testo.trim(), { delimiter: ";", header: true, skipEmptyLines: true });
@@ -411,7 +418,6 @@
 
     function mostraMessaggio(txt) { document.getElementById("msg").textContent = txt; }
 
-    // Funzione per autoridurre / aggiornare dinamicamente le opzioni dei filtri
     function aggiornaOpzioniFiltri() {
       const boxes = Array.from(document.querySelectorAll(".filtro-box"));
       boxes.forEach(box => {
