@@ -106,7 +106,7 @@
     </div>
     
     <div class="user-badge-container">
-      <a href="app.html" class="btn-nav">🚚 Torna allo Stock</a>
+      <a href="app.html" class="btn-nav" onclick="logNavigazioneStock(event)">🚚 Torna allo Stock</a>
       <div class="user-badge-text">👤 <span id="nomeUtenteLogged">Ospite</span></div>
       <button class="btn-logout" onclick="logout()">Esci</button>
     </div>
@@ -176,7 +176,53 @@
     fetch("https://api.ipify.org?format=json")
       .then(res => res.json()).then(data => { ipUtentePubblico = data.ip; }).catch(() => {});
 
-    // Colonne Visibili in Tabella (id_veicolo e marca rimossi dalla vista)
+    // Funzione per inviare log di attività generico
+    async function inviaLogAttivita(testoNota) {
+      const utente = sessionStorage.getItem("currentUser") || "Utente";
+      const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+      if (logUrl) {
+        try {
+          fetch(logUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              utente: utente, 
+              note: testoNota + " | IP: " + ipUtentePubblico,
+              dispositivo: navigator.userAgent 
+            })
+          });
+        } catch(e) {}
+      }
+    }
+
+    // Tracciamento navigazione di ritorno verso lo Stock
+    function logNavigazioneStock(e) {
+      if (e) e.preventDefault();
+      window.onbeforeunload = null;
+
+      const utente = sessionStorage.getItem("currentUser") || "Utente";
+      const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+
+      if (logUrl) {
+        fetch(logUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            utente: utente,
+            note: "Navigazione verso Stock veicoli | IP: " + ipUtentePubblico,
+            dispositivo: navigator.userAgent
+          })
+        }).finally(() => {
+          window.location.href = "app.html";
+        });
+      } else {
+        window.location.href = "app.html";
+      }
+    }
+
+    // Colonne Visibili in Tabella
     const colonneVisibili = [
       { label: "Agente", campo: "agente" },
       { label: "Anno", campo: "anno" },
@@ -195,7 +241,6 @@
       { label: "Destinatario Merci", campo: "Destinatario Merci_Descrizione" }
     ];
 
-    // GG_DIFF incluso tra i filtri a checkbox
     const campiFiltro = ["agente", "anno", "tipo_contratto", "GG_DIFF", "tipo_veicolo", "Stato Primario"];
     const campiDate = ["data_contr", "prevista_consegna_contratto", "prevista_consegna"];
 
@@ -228,7 +273,6 @@
       return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
     }
 
-    // Recupera la data e ora reale dell'ultimo aggiornamento del Gist da GitHub API
     function aggiornaDataUltimoModificaGist() {
       fetch(`https://api.github.com/gists/${GIST_ID}`)
         .then(res => res.json())
@@ -238,7 +282,7 @@
             const dataFormattata = dataUltimaModifica.toLocaleDateString("it-IT");
             const oraFormattata = dataUltimaModifica.toLocaleTimeString("it-IT");
             document.getElementById("ultimo-aggiornamento").textContent = 
-              `Ultimo aggiornamento dati: ${dataFormattata} ore ${oraFormattata}`;
+              `Ultimo aggiornamento dati Gist: ${dataFormattata} ore ${oraFormattata}`;
           }
         })
         .catch(() => {
@@ -259,7 +303,6 @@
               const valPulito = pulisciTesto(row[k]);
               const keyPulita = pulisciTesto(k);
               
-              // GG_DIFF formattato come numero intero senza virgola
               if (keyPulita === "GG_DIFF") {
                 const numVal = parseFloat(valPulito.replace(',', '.'));
                 newObj[keyPulita] = !isNaN(numVal) ? String(Math.round(numVal)) : valPulito;
@@ -337,12 +380,10 @@
         const dataPrevistaObj = parseDataOggetto(r["prevista_consegna"]);
         const dataPrevistaContrattoObj = parseDataOggetto(r["prevista_consegna_contratto"]);
 
-        // Evidenziazione in ROSSO solo se Prev. Consegna > Prev. Consegna Contr.
         if (dataPrevistaObj && dataPrevistaContrattoObj && dataPrevistaObj > dataPrevistaContrattoObj) {
           tr.classList.add("ritardo-alto");
         }
 
-        // Controllo anomalia se Prev. Consegna è antecedente ad oggi
         const eAnomalaOgniGiorno = (dataPrevistaObj && dataPrevistaObj < oggi);
 
         colonneVisibili.forEach(col => {
@@ -356,7 +397,6 @@
 
           td.textContent = v;
 
-          // Mostra badge di anomalia se la prevista consegna è antecedente ad oggi
           if (col.campo === "prevista_consegna" && eAnomalaOgniGiorno) {
             const badgeAnomalia = document.createElement("span");
             badgeAnomalia.className = "badge-anomalia";
@@ -373,86 +413,20 @@
       cont.appendChild(t);
     }
 
-    // Funzioni PDF e Modale anti-schermata bianca per iOS
-    function apriPdfOttimizzato(urlOriginale) {
-      if (!urlOriginale) return;
-      const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
-      
-      let pdfModal = document.getElementById("pdfViewerModal");
-      if (!pdfModal) {
-        pdfModal = document.createElement("div");
-        pdfModal.id = "pdfViewerModal";
-        pdfModal.className = "modal-overlay";
-        pdfModal.innerHTML = `
-          <div class="modal-content" style="height: 90vh; max-height: 90vh; display: flex; flex-direction: column; padding: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-              <h3 style="margin:0; font-size: 1.1em; color: #123e63;">📄 Dettagli PDF</h3>
-              <div style="display: flex; gap: 8px;">
-                <button id="btnDownloadPdf" onclick="scaricaPdfSicuro()" style="background: #16803c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.9em; display: inline-flex; align-items: center;">📥 Scarica / Salva</button>
-                <button onclick="chiudiPdfModale()" style="background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Chiudi ×</button>
-              </div>
-            </div>
-            <div style="flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 6px; border: 1px solid #ccc;">
-              <iframe id="pdfIframe" style="width: 100%; height: 100%; border: none;" src="about:blank"></iframe>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(pdfModal);
-      }
-
-      window._correntePdfUrl = urlOriginale;
-      const iframe = document.getElementById("pdfIframe");
-      iframe.src = urlViewer;
-      pdfModal.style.display = "flex";
-    }
-
-    async function scaricaPdfSicuro() {
-      const url = window._correntePdfUrl;
-      if (!url) return;
-
-      if (navigator.share && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        try {
-          await navigator.share({ title: 'Documento', url: url });
-          return;
-        } catch (e) {}
-      }
-
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = blobUrl;
-        a.download = 'Documento.pdf';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
-      } catch (err) {
-        window.open(url, '_system');
-      }
-    }
-
-    function chiudiPdfModale() {
-      const pdfModal = document.getElementById("pdfViewerModal");
-      const iframe = document.getElementById("pdfIframe");
-      if (iframe) iframe.src = "about:blank";
-      if (pdfModal) pdfModal.style.display = "none";
-    }
-
     function mostraMessaggio(txt) { document.getElementById("msg").textContent = txt; }
 
     function applicaFiltro() {
       const filtriNodo = document.getElementById("filtri-attivi");
       filtriNodo.innerHTML = "";
       let arr = [...dati];
+      let descrizioniFiltri = [];
 
       const testoRicerca = document.getElementById("input-ricerca-diretta")?.value.trim().toLowerCase() || "";
       if (testoRicerca !== "") {
         arr = arr.filter(r => {
           return Object.values(r).some(val => String(val).toLowerCase().includes(testoRicerca));
         });
+        descrizioniFiltri.push(`Ricerca contratti: "${testoRicerca}"`);
 
         const badgeRicerca = document.createElement("span");
         badgeRicerca.className = "badge";
@@ -469,6 +443,8 @@
         const selvals = Array.from(box.querySelectorAll("input[type='checkbox']:checked")).map(c => c.value);
         if (selvals.length > 0) {
           arr = arr.filter(r => selvals.includes(r[col]));
+          descrizioniFiltri.push(`${col}: [${selvals.join(", ")}]`);
+
           const badge = document.createElement("span");
           badge.className = "badge";
           badge.textContent = `${col}: ${selvals.join(", ")}`;
@@ -483,6 +459,13 @@
         }
       });
 
+      // Invio del log di monitoraggio filtri contratti
+      if (descrizioniFiltri.length > 0) {
+        inviaLogAttivita("Filtro Contratti applicato: " + descrizioniFiltri.join(" | "));
+      } else {
+        inviaLogAttivita("Filtro Contratti applicato: (Nessun filtro selezionato - Mostra tutti)");
+      }
+
       mostraTabella(arr);
       mostraMessaggio(`${arr.length} contratti trovati`);
     }
@@ -491,6 +474,9 @@
       document.getElementById("input-ricerca-diretta").value = "";
       document.querySelectorAll(".filtro-box input[type='checkbox']").forEach(chk => chk.checked = false);
       document.getElementById("filtri-attivi").innerHTML = "";
+      
+      inviaLogAttivita("Reset filtri Contratti effettuato");
+
       mostraTabella(dati);
       mostraMessaggio(`${dati.length} contratti trovati`);
     }
