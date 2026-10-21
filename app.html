@@ -173,18 +173,21 @@
 </script>
 
 <header>
-    <div>
-      <h1>Socom Nuova Stock</h1>
-      <div id="ultimo-aggiornamento">Ultimo aggiornamento: ...</div>
-    </div>
-    
-    <!-- Sostituisci la vecchia sezione con questa -->
-    <div class="user-badge-container">
-      <a href="contratti.html" style="background:#16803c; color:white; padding:6px 12px; border-radius:5px; text-decoration:none; font-weight:bold; font-size:0.85em;">📋 Contratti in Arrivo</a>
-      <div class="user-badge-text">👤 Utente: <span id="nomeUtenteLogged">Ospite</span></div>
-      <button class="btn-logout" onclick="logout()">Esci</button>
-    </div>
-  </header>
+  <div>
+    <h1>Socom Nuova Stock</h1>
+    <div id="ultimo-aggiornamento">Caricamento data ultimo aggiornamento...</div>
+  </div>
+  
+  <div class="user-badge-container" style="display: flex; align-items: center; gap: 10px;">
+    <a href="contratti.html" 
+       onclick="logNavigazioneContratti(event)" 
+       style="background:#16803c; color:white; padding:6px 12px; border-radius:5px; text-decoration:none; font-weight:bold; font-size:0.85em; margin-right: 15px; white-space: nowrap;">
+       📋 Contratti con veicoli in arrivo
+    </a>
+    <div class="user-badge-text">👤 Utente: <span id="nomeUtenteLogged">Ospite</span></div>
+    <button class="btn-logout" onclick="logout()">Esci</button>
+  </div>
+</header>
 
   <main>
     <div class="toolbar">
@@ -259,6 +262,35 @@ function apriPdfOttimizzato(urlOriginale) {
   pdfModal.style.display = "block";
 }
 
+// Traccia la navigazione verso la pagina dei contratti senza generare log di abbandono/chiusura
+function logNavigazioneContratti(e) {
+  // Disattiva temporaneamente l'avviso o log di chiusura pagina
+  window.onbeforeunload = null;
+
+  const utente = sessionStorage.getItem("currentUser") || "Utente";
+  const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+
+  if (logUrl) {
+    // Invia il log di navigazione attiva
+    fetch(logUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        utente: utente,
+        note: "Navigazione verso Contratti con veicoli in arrivo | IP: " + ipUtentePubblico,
+        dispositivo: navigator.userAgent
+      })
+    }).finally(() => {
+      window.location.href = "contratti.html";
+    });
+  } else {
+    window.location.href = "contratti.html";
+  }
+
+  e.preventDefault();
+}
+	  
 // Funzione per scaricare il file senza aprire pagine bianche su iOS/PWA
 async function scaricaPdfSicuro() {
   const url = window._correntePdfUrl;
