@@ -144,7 +144,6 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
 
-    // Timeout di inattività (1 Ora)
     const TIMEOUT_INATTIVITA_MS = 60 * 60 * 1000;
     let timerInattivita;
 
@@ -176,7 +175,6 @@
     fetch("https://api.ipify.org?format=json")
       .then(res => res.json()).then(data => { ipUtentePubblico = data.ip; }).catch(() => {});
 
-    // Funzione per inviare log di attività generico
     async function inviaLogAttivita(testoNota) {
       const utente = sessionStorage.getItem("currentUser") || "Utente";
       const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
@@ -196,7 +194,6 @@
       }
     }
 
-    // Tracciamento navigazione di ritorno verso lo Stock
     function logNavigazioneStock(e) {
       if (e) e.preventDefault();
       window.onbeforeunload = null;
@@ -222,7 +219,6 @@
       }
     }
 
-    // Colonne Visibili in Tabella
     const colonneVisibili = [
       { label: "Agente", campo: "agente" },
       { label: "Anno", campo: "anno" },
@@ -415,6 +411,41 @@
 
     function mostraMessaggio(txt) { document.getElementById("msg").textContent = txt; }
 
+    // Funzione per autoridurre / aggiornare dinamicamente le opzioni dei filtri
+    function aggiornaOpzioniFiltri() {
+      const boxes = Array.from(document.querySelectorAll(".filtro-box"));
+      boxes.forEach(box => {
+        const col = box.getAttribute("data-col-name");
+        const checkboxes = Array.from(box.querySelectorAll("input[type='checkbox']"));
+        const selezionati = checkboxes.filter(chk => chk.checked).map(chk => chk.value);
+        
+        let compatibili = [...dati];
+        boxes.forEach(altroBox => {
+          if (altroBox === box) return;
+          const colAltro = altroBox.getAttribute("data-col-name");
+          const valoriAltro = Array.from(altroBox.querySelectorAll("input[type='checkbox']"))
+                                   .filter(c => c.checked)
+                                   .map(c => c.value);
+          if (valoriAltro.length) {
+            compatibili = compatibili.filter(r => valoriAltro.includes(r[colAltro]));
+          }
+        });
+
+        const valoriDisponibili = new Set(compatibili.map(r => r[col]).filter(v => v !== undefined && v !== null && String(v) !== ""));
+        selezionati.forEach(v => valoriDisponibili.add(v));
+        
+        checkboxes.forEach(chk => {
+          const val = chk.value;
+          const lbl = chk.parentElement;
+          if (valoriDisponibili.has(val)) {
+            lbl.style.display = "flex";
+          } else {
+            lbl.style.display = "none";
+          }
+        });
+      });
+    }
+
     function applicaFiltro() {
       const filtriNodo = document.getElementById("filtri-attivi");
       filtriNodo.innerHTML = "";
@@ -459,24 +490,28 @@
         }
       });
 
-      // Invio del log di monitoraggio filtri contratti
       if (descrizioniFiltri.length > 0) {
         inviaLogAttivita("Filtro Contratti applicato: " + descrizioniFiltri.join(" | "));
       } else {
         inviaLogAttivita("Filtro Contratti applicato: (Nessun filtro selezionato - Mostra tutti)");
       }
 
+      aggiornaOpzioniFiltri();
       mostraTabella(arr);
       mostraMessaggio(`${arr.length} contratti trovati`);
     }
 
     function resettaFiltro() {
       document.getElementById("input-ricerca-diretta").value = "";
-      document.querySelectorAll(".filtro-box input[type='checkbox']").forEach(chk => chk.checked = false);
+      document.querySelectorAll(".filtro-box input[type='checkbox']").forEach(chk => {
+        chk.checked = false;
+        chk.parentElement.style.display = "flex";
+      });
       document.getElementById("filtri-attivi").innerHTML = "";
       
       inviaLogAttivita("Reset filtri Contratti effettuato");
 
+      aggiornaOpzioniFiltri();
       mostraTabella(dati);
       mostraMessaggio(`${dati.length} contratti trovati`);
     }
