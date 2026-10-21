@@ -288,12 +288,20 @@
         });
     }
 
-    function caricaDatiContratti() {
-      const urlForzato = URL_GIST_CONTRATTI + "?nocache=" + Date.now();
+function caricaDatiContratti() {
+      // Usiamo l'API ufficiale di GitHub per i Gist, che non ha problemi di cache CDN ed è sempre aggiornata al secondo
+      fetch(`https://api.github.com/gists/${GIST_ID}?nocache=` + Date.now())
+        .then(r => r.json())
+        .then(gistData => {
+          // Estrae il contenuto del file dei contratti direttamente dal JSON dell'API
+          const fileChiave = Object.keys(gistData.files).find(f => f.includes("contratti") || f.endsWith(".txt"));
+          const testo = fileChiave ? gistData.files[fileChiave].content : "";
 
-      fetch(urlForzato)
-        .then(r => r.text())
-        .then(testo => {
+          if (!testo) {
+            mostraMessaggio("Errore: Impossibile leggere il contenuto del file Gist.");
+            return;
+          }
+
           const parsed = Papa.parse(testo.trim(), { delimiter: ";", header: true, skipEmptyLines: true });
           intestazione = parsed.meta.fields ? parsed.meta.fields.map(pulisciTesto) : [];
           dati = parsed.data.map(row => {
@@ -312,10 +320,20 @@
             return newObj;
           });
 
-          aggiornaDataUltimoModificaGist();
+          // Aggiorna anche la data dell'ultimo aggiornamento sfruttando lo stesso oggetto API ricevuto
+          if (gistData && gistData.updated_at) {
+            const dataUltimaModifica = new Date(gistData.updated_at);
+            document.getElementById("ultimo-aggiornamento").textContent = 
+              `Ultimo aggiornamento dati Gist: ${dataUltimaModifica.toLocaleDateString("it-IT")} ore ${dataUltimaModifica.toLocaleTimeString("it-IT")}`;
+          }
+
           creaFiltri();
           mostraTabella(dati);
           mostraMessaggio(`${dati.length} contratti trovati`);
+        })
+        .catch(err => {
+          console.error("Errore caricamento via API Gist:", err);
+          mostraMessaggio("Errore di caricamento dati.");
         });
     }
 
