@@ -235,7 +235,24 @@
     </div>
 
     <div id="filtri-attivi"></div>
-    <div class="filtri" id="parametri"></div>
+
+    <!-- Sezione Filtri Principali -->
+    <div style="margin-bottom: 8px; font-weight: bold; color: #00bfff; font-size: 0.95em;">📌 Filtri Principali</div>
+    <div class="filtri" id="parametri-principali"></div>
+
+    <!-- Pulsante per Mostrare/Nascondere i Filtri Secondari -->
+    <div style="margin: 15px 0 12px 0;">
+      <button id="btn-toggle-secondari" onclick="toggleFiltriSecondari()" style="background: #1c2d42; color: #00e5ff; border: 1px solid #0055aa; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.88em; display: inline-flex; align-items: center; gap: 6px;">
+        🔽 Mostra Filtri Secondari
+      </button>
+    </div>
+
+    <!-- Sezione Filtri Secondari (A scomparsa) -->
+    <div id="box-secondari" style="display: none; background: #182535; padding: 12px; border-radius: 8px; border: 1px dashed #0055aa; margin-bottom: 15px;">
+      <div style="margin-bottom: 10px; font-weight: bold; color: #94a3b8; font-size: 0.9em;">⚙️ Filtri Secondari</div>
+      <div class="filtri" id="parametri-secondari"></div>
+    </div>
+
     <div id="tabella-container"></div>
   </main>
 
@@ -246,10 +263,15 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
 
+    // Campi definiti come Filtri Principali
+    const campiPrincipali = [
+      "des_marca", "tipo_veicolo", "passo", "descr_versione", 
+      "descri_status", "descrizione", "prenotato_da", "tipo_allestimento"
+    ];
+
     // Funzione per estrarre ed evidenziare il Model Year (MY) dalla descrizione
     function estraiModelYear(descrizione) {
       if (!descrizione) return null;
-      // Intercetta pattern come MY24, MY 24, MY2025, MY.25, MY 2026 (case-insensitive)
       const regex = /MY[\s\.]*(\d{2,4})/i;
       const match = descrizione.match(regex);
       if (match) {
@@ -258,6 +280,19 @@
         return `MY${annoFormattato.slice(-2)}`;
       }
       return null;
+    }
+
+    // Toggle per mostrare/nascondere la sezione filtri secondari
+    function toggleFiltriSecondari() {
+      const box = document.getElementById("box-secondari");
+      const btn = document.getElementById("btn-toggle-secondari");
+      if (box.style.display === "none") {
+        box.style.display = "block";
+        btn.innerHTML = "🔼 Nascondi Filtri Secondari";
+      } else {
+        box.style.display = "none";
+        btn.innerHTML = "🔽 Mostra Filtri Secondari";
+      }
     }
 
     // Apri PDF in modale interna e gestione download pulita senza schermate bianche su iOS
@@ -294,7 +329,6 @@
       pdfModal.style.display = "block";
     }
 
-    // Traccia la navigazione verso la pagina dei contratti senza generare log di abbandono/chiusura
     function logNavigazioneContratti(e) {
       if (e) e.preventDefault();
       window.onbeforeunload = null;
@@ -320,7 +354,6 @@
       }
     }
 	  
-    // Funzione per scaricare il file senza aprire pagine bianche su iOS/PWA
     async function scaricaPdfSicuro() {
       const url = window._correntePdfUrl;
       if (!url) return;
@@ -684,14 +717,18 @@
       modal.style.display = "block";
     }
 
+    // Creazione Sdoppiata dei Filtri tra Principali e Secondari
     function creaFiltri() {
-      const div = document.getElementById("parametri"); 
-      div.innerHTML = "";
+      const divPrincipali = document.getElementById("parametri-principali");
+      const divSecondari = document.getElementById("parametri-secondari");
+      divPrincipali.innerHTML = "";
+      divSecondari.innerHTML = "";
       
       intestazione.forEach((col, i) => {
         if (campiEsclusiFiltri.includes(col)) return;
 
         const valoriUnici = [...new Set(dati.map(r => r[col]).filter(Boolean))].sort();
+        if (valoriUnici.length === 0) return;
 
         const box = document.createElement("div");
         box.className = "filtro-box";
@@ -713,7 +750,12 @@
         l.className = "filtro";
         l.innerHTML = `<strong>${col}</strong>`;
         l.appendChild(box);
-        div.appendChild(l);
+
+        if (campiPrincipali.includes(col)) {
+          divPrincipali.appendChild(l);
+        } else {
+          divSecondari.appendChild(l);
+        }
       });
     }
 
