@@ -1035,7 +1035,10 @@
       mostraMessaggio(`${dati.length} record trovati`);
     }
 
-    function apriRiepilogo() {
+	function apriRiepilogo() {
+      // Invia il log dell'azione di apertura del riepilogo
+      inviaLogAttivita("Apertura Riepilogo Selezione (Record analizzati: " + datiCorrenti.length + ")");
+
       const modal = document.getElementById("riepilogoModal");
       const cont = document.getElementById("contenutoRiepilogo");
 
@@ -1119,7 +1122,7 @@
       cont.innerHTML = html;
       modal.style.display = "block";
     }
-
+	  
     function stampaModale() {
       const contenuto = document.getElementById('contenutoDettagli').innerHTML;
       const finestraStampa = window.open('', '', 'width=900,height=700');
