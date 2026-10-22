@@ -215,7 +215,7 @@
     <div class="toolbar">
       <button onclick="resettaFiltro()">Reset Filtro</button>
       <button onclick="caricaDati()">Aggiorna</button>
-      <button onclick="toggleColonneExtra()" id="btnExtraCols" style="background: #1769aa;">📈 Mostra Dati Economici & Ordine</button>
+      <button onclick="toggleColonneExtra()" id="btnExtraCols" style="background: #1769aa;">📈 Mostra listini e data ordine</button>
     </div>
 
     <!-- Campo Ricerca Diretta (VAN / Telaio / Testo) -->
@@ -291,11 +291,11 @@
       
       if (mostraColonneExtra) {
         btn.style.background = "#c62828";
-        btn.textContent = "📉 Nascondi Dati Economici & Ordine";
+        btn.textContent = "📉 Nascondi listini e data ordine";
         inviaLogAttivita("Visualizzazione colonne extra (Economici/Ordine) attivata");
       } else {
         btn.style.background = "#1769aa";
-        btn.textContent = "📈 Mostra Dati Economici & Ordine";
+        btn.textContent = "📈 Mostra listini e data ordine";
         inviaLogAttivita("Visualizzazione colonne extra (Economici/Ordine) disattivata");
       }
       
