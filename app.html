@@ -104,8 +104,8 @@
     .badge { background: #d32f2f; padding: 4px 8px; border-radius: 12px; margin-right: 8px; display: inline-flex; align-items: center; color: #fff; font-weight: bold; }
     .badge button { border: none; background: none; margin-left: 6px; cursor: pointer; font-weight: bold; color: #fff; font-size: 14px; }
     
-    .toolbar { margin-bottom: 15px; }
-    .toolbar button { margin-right: 10px; padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #0055aa; color: white; border: none; border-radius: 5px; }
+    .toolbar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .toolbar button { padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #0055aa; color: white; border: none; border-radius: 5px; font-weight: bold; }
     .toolbar button:hover { background: #004080; }
 	
 /* Responsive Tabella Principale su Mobile */
@@ -131,7 +131,7 @@
 
 @media (max-width: 480px) {
   body { padding: 10px; }
-  .toolbar button { margin-bottom: 10px; width: 100%; }
+  .toolbar button { margin-bottom: 5px; width: 100%; }
   h1 { font-size: 1.4em; }
 }
 
@@ -215,6 +215,7 @@
     <div class="toolbar">
       <button onclick="resettaFiltro()">Reset Filtro</button>
       <button onclick="caricaDati()">Aggiorna</button>
+      <button onclick="toggleColonneExtra()" id="btnExtraCols" style="background: #1769aa;">📈 Mostra Dati Economici & Ordine</button>
     </div>
 
     <!-- Campo Ricerca Diretta (VAN / Telaio / Testo) -->
@@ -262,6 +263,7 @@
     let URL_SCHEDE_PDF = "";
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
+    let mostraColonneExtra = false;
 
     // Campi definiti come Filtri Principali
     const campiPrincipali = [
@@ -280,6 +282,24 @@
         return `MY${annoFormattato.slice(-2)}`;
       }
       return null;
+    }
+
+    // Toggle Mostra/Nascondi Colonne Economiche ed Ordine
+    function toggleColonneExtra() {
+      mostraColonneExtra = !mostraColonneExtra;
+      const btn = document.getElementById("btnExtraCols");
+      
+      if (mostraColonneExtra) {
+        btn.style.background = "#c62828";
+        btn.textContent = "📉 Nascondi Dati Economici & Ordine";
+        inviaLogAttivita("Visualizzazione colonne extra (Economici/Ordine) attivata");
+      } else {
+        btn.style.background = "#1769aa";
+        btn.textContent = "📈 Mostra Dati Economici & Ordine";
+        inviaLogAttivita("Visualizzazione colonne extra (Economici/Ordine) disattivata");
+      }
+      
+      mostraTabella(datiCorrenti);
     }
 
     // Toggle per mostrare/nascondere la sezione filtri secondari
@@ -782,10 +802,20 @@
         { label: "nota_pren", campo: "nota_pren" }
       ];
 
+      if (mostraColonneExtra) {
+        colonneTabella.push(
+          { label: "Data Ins. Ordine", campo: "data_inserimento_ord" },
+          { label: "Listino Originale", campo: "listino_originale" },
+          { label: "Prezzo Versione", campo: "prezzo_versione" },
+          { label: "Prezzo Opt", campo: "prezzo_opt" }
+        );
+      }
+
       const campiInGrassetto = new Set([
         "descrizione", "descri_status", "stato_avanz_ordine",
         "data_arrivo_prev", "tipo_allestimento", "prezzo_vendita_web",
-        "prenotato_da", "scadenza_pren", "nota_pren"
+        "prenotato_da", "scadenza_pren", "nota_pren",
+        "listino_originale", "prezzo_versione", "prezzo_opt"
       ]);
 
       function formattaPrezzoEuro(valore) {
@@ -865,11 +895,11 @@
           } else {
             const chiave = chiaveCampo(r, col.campo);
             let v = r[chiave] || "";
-            if (campiDate.some(c => c.toLowerCase() === col.campo.toLowerCase())) {
+            if (campiDate.some(c => c.toLowerCase() === col.campo.toLowerCase()) || col.campo === "data_inserimento_ord") {
               v = formattaData(v);
             } else if (col.campo.toLowerCase() === "giorni_giacenza") {
               v = v ? Math.round(parseFloat(v)).toString() : "";
-            } else if (col.campo.toLowerCase() === "prezzo_vendita_web") {
+            } else if (["prezzo_vendita_web", "listino_originale", "prezzo_versione", "prezzo_opt"].includes(col.campo.toLowerCase())) {
               v = formattaPrezzoEuro(v);
             }
             td.textContent = v;
@@ -1035,8 +1065,7 @@
       mostraMessaggio(`${dati.length} record trovati`);
     }
 
-	function apriRiepilogo() {
-      // Invia il log dell'azione di apertura del riepilogo
+    function apriRiepilogo() {
       inviaLogAttivita("Apertura Riepilogo Selezione (Record analizzati: " + datiCorrenti.length + ")");
 
       const modal = document.getElementById("riepilogoModal");
@@ -1122,7 +1151,7 @@
       cont.innerHTML = html;
       modal.style.display = "block";
     }
-	  
+
     function stampaModale() {
       const contenuto = document.getElementById('contenutoDettagli').innerHTML;
       const finestraStampa = window.open('', '', 'width=900,height=700');
