@@ -215,7 +215,7 @@
     <div class="toolbar">
       <button onclick="resettaFiltro()">Reset Filtro</button>
       <button onclick="caricaDati()">Aggiorna</button>
-      <button onclick="toggleColonneExtra()" id="btnExtraCols" style="background: #1769aa;">📈 Mostra listini e data ordine</button>
+      <button onclick="toggleColonneExtra()" id="btnExtraCols" style="background: #1769aa;">📈 Mostra e Nascondi Listini e data ordine</button>
     </div>
 
     <!-- Campo Ricerca Diretta (VAN / Telaio / Testo) -->
@@ -284,19 +284,19 @@
       return null;
     }
 
-    // Toggle Mostra/Nascondi Colonne Economiche ed Ordine
+    // Toggle Mostra/Nascondi Listini e Data Ordine
     function toggleColonneExtra() {
       mostraColonneExtra = !mostraColonneExtra;
       const btn = document.getElementById("btnExtraCols");
       
       if (mostraColonneExtra) {
         btn.style.background = "#c62828";
-        btn.textContent = "📉 Nascondi listini e data ordine";
-        inviaLogAttivita("Visualizzazione colonne extra (Economici/Ordine) attivata");
+        btn.textContent = "📉 Nascondi Listini e data ordine";
+        inviaLogAttivita("Visualizzazione colonne extra (Listini e data ordine) attivata");
       } else {
         btn.style.background = "#1769aa";
-        btn.textContent = "📈 Mostra listini e data ordine";
-        inviaLogAttivita("Visualizzazione colonne extra (Economici/Ordine) disattivata");
+        btn.textContent = "📈 Mostra e Nascondi Listini e data ordine";
+        inviaLogAttivita("Visualizzazione colonne extra (Listini e data ordine) disattivata");
       }
       
       mostraTabella(datiCorrenti);
@@ -805,9 +805,9 @@
       if (mostraColonneExtra) {
         colonneTabella.push(
           { label: "Data Ins. Ordine", campo: "data_inserimento_ord" },
-          { label: "Listino Originale", campo: "listino_originale" },
-          { label: "Prezzo Versione", campo: "prezzo_versione" },
-          { label: "Prezzo Opt", campo: "prezzo_opt" }
+          { label: "Listino Totale d'acquisto", campo: "listino_originale" },
+          { label: "Listino Base", campo: "prezzo_versione" },
+          { label: "Listino opt", campo: "prezzo_opt" }
         );
       }
 
