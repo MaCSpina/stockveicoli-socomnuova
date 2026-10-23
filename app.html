@@ -199,7 +199,7 @@
   </div>
   
   <div class="user-badge-container">
-    <div class="user-badge-text">👤 Utente: <span id="nomeUtenteLogged">Ospite</span></div>
+    <div class="user-badge-text">👤 Utente: <span id="nomeUtenteLogged">Ospite</span> (<span id="ruoloUtenteLabel"></span>)</div>
     <button class="btn-logout" onclick="logout()">Esci</button>
   </div>
 </header>
@@ -264,6 +264,10 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
     let mostraColonneExtra = false;
+
+    // Recupero Ruolo e Utente dalla sessione
+    const userRole = sessionStorage.getItem("userRole") || "agente";
+    const currentUser = sessionStorage.getItem("currentUser") || "Ospite";
 
     // Campi definiti come Filtri Principali
     const campiPrincipali = [
@@ -353,7 +357,6 @@
       if (e) e.preventDefault();
       window.onbeforeunload = null;
 
-      const utente = sessionStorage.getItem("currentUser") || "Utente";
       const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
 
       if (logUrl) {
@@ -362,7 +365,7 @@
           mode: "no-cors",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            utente: utente,
+            utente: currentUser,
             note: "Navigazione verso Contratti con veicoli in arrivo | IP: " + ipUtentePubblico,
             dispositivo: navigator.userAgent
           })
@@ -424,7 +427,6 @@
     }
 
     async function logoutPerInattivita() {
-      const utente = sessionStorage.getItem("currentUser") || "Utente";
       const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
       if (logUrl) {
         try {
@@ -433,7 +435,7 @@
             mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
-              utente: utente, 
+              utente: currentUser, 
               note: "Disconnessione automatica per inattività (1 ora) | IP: " + ipUtentePubblico,
               dispositivo: navigator.userAgent 
             })
@@ -589,8 +591,15 @@
 
     async function avviaConfigurazione() {
         try {
-            const utente = sessionStorage.getItem("currentUser") || "Utente";
-            document.getElementById("nomeUtenteLogged").textContent = utente;
+            // Visualizzazione utente e ruolo nell'header
+            document.getElementById("nomeUtenteLogged").textContent = currentUser;
+            document.getElementById("ruoloUtenteLabel").textContent = userRole.toUpperCase();
+
+            // PROFILAZIONE RUOLO AGENTE: Nasconde il pulsante listini
+            if (userRole === "agente") {
+                const btnExtra = document.getElementById("btnExtraCols");
+                if (btnExtra) btnExtra.style.display = "none";
+            }
 
             const res = await fetch("config.json?nocache=" + Date.now());
             if (!res.ok) throw new Error("Impossibile caricare la configurazione");
@@ -617,7 +626,6 @@
     }
 
     async function logout() {
-        const utente = sessionStorage.getItem("currentUser") || "Utente";
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
         if (logUrl) {
             try {
@@ -626,7 +634,7 @@
                     mode: "no-cors",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 
-                        utente: utente, 
+                        utente: currentUser, 
                         note: "Disconnessione (Logout) | IP: " + ipUtentePubblico,
                         dispositivo: navigator.userAgent 
                     })
@@ -639,7 +647,6 @@
     }
 
     async function inviaLogAttivita(testoNota) {
-        const utente = sessionStorage.getItem("currentUser") || "Utente";
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
         if (logUrl) {
             try {
@@ -648,7 +655,7 @@
                     mode: "no-cors",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 
-                        utente: utente, 
+                        utente: currentUser, 
                         note: testoNota + " | IP: " + ipUtentePubblico,
                         dispositivo: navigator.userAgent 
                     })
@@ -658,12 +665,11 @@
     }
 
     function tracciaChiusura() {
-        const utente = sessionStorage.getItem("currentUser");
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
         
-        if (utente && logUrl) {
+        if (currentUser && logUrl) {
             const payload = JSON.stringify({ 
-                utente: utente, 
+                utente: currentUser, 
                 note: "Chiusura scheda / abbandono pagina | IP: " + ipUtentePubblico,
                 dispositivo: navigator.userAgent 
             });
@@ -781,7 +787,7 @@
 
     function mostraTabella(arr) {
       datiCorrenti = arr; 
-      const colonneTabella = [
+      let colonneTabella = [
         { label: "id_veicolo", campo: "id_veicolo" },
         { label: "descrizione", campo: "descrizione" },
         { label: "des_colore", campo: "des_colore" },
@@ -801,6 +807,11 @@
         { label: "scadenza_pren", campo: "scadenza_pren" },
         { label: "nota_pren", campo: "nota_pren" }
       ];
+
+      // PROFILAZIONE RUOLO AGENTE: Nasconde la colonna nota_pren
+      if (userRole === "agente") {
+        colonneTabella = colonneTabella.filter(col => col.campo !== "nota_pren");
+      }
 
       if (mostraColonneExtra) {
         colonneTabella.push(
