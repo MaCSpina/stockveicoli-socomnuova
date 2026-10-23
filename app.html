@@ -766,7 +766,14 @@ function logNavigazioneContratti(e) {
       divSecondari.innerHTML = "";
       
       intestazione.forEach((col, i) => {
-        const isDataInsOrd = (col.toLowerCase() === "data_inserimento_ord");
+		const nomeCol = col.toLowerCase();
+        const isDataInsOrd = (nomeCol === "data_inserimento_ord");
+		const isNotaPren = (nomeCol === "nota_pren");
+
+		// 1. Se l'utente è "agente", nascondiamo totalmente il filtro nota_pren
+    	if (isNotaPren && userRole === "agente") {
+     	 return;
+   		}
         
         if (campiEsclusiFiltri.includes(col)) {
           if (!(isDataInsOrd && userRole === "admin")) return;
