@@ -129,7 +129,6 @@
     }
     .btn-carica-altri:hover { background: #003366; }
 
-    /* Animazione dello spinner di caricamento */
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -404,6 +403,7 @@
       }
     }
 
+    // Gestione PDF ottimizzata senza finti download
     function apriPdfOttimizzato(urlOriginale) {
       if (!urlOriginale) return;
       const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
@@ -444,31 +444,6 @@
       }
     }
 
-    function logNavigazioneContratti(e) {
-      if (e) e.preventDefault();
-      const overlay = document.getElementById("loadingOverlay");
-      if (overlay) overlay.style.display = "flex";
-
-      window.onbeforeunload = null;
-      const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
-
-      if (logUrl) {
-        const payload = JSON.stringify({
-          utente: currentUser,
-          note: "Navigazione verso Contratti con veicoli in arrivo | IP: " + ipUtentePubblico,
-          dispositivo: navigator.userAgent
-        });
-
-        if (navigator.sendBeacon) {
-          navigator.sendBeacon(logUrl, new Blob([payload], { type: "text/plain;charset=UTF-8" }));
-        } else {
-          fetch(logUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true }).catch(() => {});
-        }
-      }
-
-      window.location.href = "contratti.html";
-    }
-	  
     async function scaricaPdfSicuro() {
       const url = window._correntePdfUrl;
       if (!url) return;
@@ -502,6 +477,31 @@
       const iframe = document.getElementById("pdfIframe");
       if (iframe) iframe.src = "about:blank";
       if (pdfModal) pdfModal.style.display = "none";
+    }
+
+    function logNavigazioneContratti(e) {
+      if (e) e.preventDefault();
+      const overlay = document.getElementById("loadingOverlay");
+      if (overlay) overlay.style.display = "flex";
+
+      window.onbeforeunload = null;
+      const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+
+      if (logUrl) {
+        const payload = JSON.stringify({
+          utente: currentUser,
+          note: "Navigazione verso Contratti con veicoli in arrivo | IP: " + ipUtentePubblico,
+          dispositivo: navigator.userAgent
+        });
+
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(logUrl, new Blob([payload], { type: "text/plain;charset=UTF-8" }));
+        } else {
+          fetch(logUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true }).catch(() => {});
+        }
+      }
+
+      window.location.href = "contratti.html";
     }
 	  
     const TIMEOUT_INATTIVITA_MS = 60 * 60 * 1000;
@@ -945,7 +945,6 @@
       });
     }
 
-    // Algoritmo di ordinamento rapido eseguito solo su richiesta esplicita
     function ordinaColonna(campo) {
       if (!campo) return;
       
