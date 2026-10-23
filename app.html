@@ -265,6 +265,7 @@
       <span style="font-size: 0.9em; font-weight: bold; color: #00e5ff;">🔄 Ordina tabella per:</span>
       <select id="selectOrdinamento" style="padding: 7px 10px; border-radius: 5px; border: 1px solid #0055aa; background: #fff; color: #333; font-size: 0.9em; flex: 1; min-width: 170px; max-width: 250px;">
         <option value="id_veicolo">ID Veicolo</option>
+        <option value="des_marca">Marca</option>
         <option value="descrizione">Descrizione</option>
         <option value="VAN">VAN</option>
         <option value="giorni_giacenza">Giorni Giacenza</option>
@@ -1010,7 +1011,7 @@
       let colonneTabella = [
         { label: "✅", checkboxCol: true },
         { label: "id_veicolo", campo: "id_veicolo" },
-		{ label: "des_marca", campo: "desmarca" },
+        { label: "des_marca", campo: "des_marca" },
         { label: "descrizione", campo: "descrizione" },
         { label: "des_colore", campo: "des_colore" },
         { label: "VAN", campo: "VAN" },
