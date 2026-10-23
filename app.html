@@ -300,6 +300,9 @@
     let campoOrdinamento = null;
     let ordineCrescente = true;
 
+    // Mappa di memorizzazione rapida dei record per indice (per la delegazione degli eventi)
+    let mappaRecordTabella = new Map();
+
     // Recupero Ruolo e Utente dalla sessione
     const userRole = sessionStorage.getItem("userRole") || "agente";
     const currentUser = sessionStorage.getItem("currentUser") || "Ospite";
@@ -531,8 +534,7 @@
       window.location.href = "index.html";
     }
 
-    // Listener ottimizzati per evitare rallentamenti touch su mobile
-    ['touchstart', 'click', 'keydown'].forEach(evt => {
+    ['touchstart', 'click', 'keydown', 'mousemove'].forEach(evt => {
       window.addEventListener(evt, resetTimerInattivita, { passive: true });
     });
 
@@ -617,7 +619,6 @@
 
           datiCorrenti = [...dati];
           
-          // Rendering progressivo ad alta velocità per mobile
           requestAnimationFrame(() => {
             creaFiltriPrincipali();
             mostraTabella(datiCorrenti);
@@ -781,11 +782,13 @@
         avviaConfigurazione();
     };
 
-    function mostraDettagli(veicolo) {
+    function mostraDettagliDaRecordId(idVeicolo) {
+      const veicoloTrovato = dati.find(r => String(r.id_veicolo).trim() === String(idVeicolo).trim());
+      if (!veicoloTrovato) return;
+
       const modal = document.getElementById("dettagliModal");
       const contenuto = document.getElementById("contenutoDettagli");
 
-      const idVeicolo = veicolo.id_veicolo || "N/D";
       let htmlSinistra = `<h2>Veicolo ID ${idVeicolo}</h2><ul class="lista-dettagli">`;
       const campiDaNascondereDettaglio = new Set([
         "cod_modello_vp", "famiglia_iveco", "versione", "data_inserimento_ord",
@@ -796,7 +799,7 @@
 
       intestazione.forEach(key => {
         if (key !== "id_veicolo" && !campiDaNascondereDettaglio.has(String(key).toLowerCase())) {
-          let val = veicolo[key];
+          let val = veicoloTrovato[key];
           if (campiDate.includes(key)) val = formattaData(val);
           if (!val) val = "—";
           val = String(val).replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -812,7 +815,7 @@
 
       let htmlDestra = "";
       const optional = optionalDati
-        .filter(o => o.id_veicolo === veicolo.id_veicolo)
+        .filter(o => o.id_veicolo === veicoloTrovato.id_veicolo)
         .sort((a, b) => a.codice.localeCompare(b.codice));
 
       if (optional.length) {
@@ -1074,6 +1077,8 @@
 
     function mostraTabella(arr) {
       datiCorrenti = arr; 
+      mappaRecordTabella.clear();
+
       let colonneTabella = [
         { label: "✅", checkboxCol: true },
         { label: "id_veicolo", campo: "id_veicolo" },
@@ -1165,8 +1170,26 @@
       t.appendChild(thead);
 
       const tbody = document.createElement("tbody");
+      
+      // Delegazione degli eventi per aprire i dettagli istantaneamente senza listener ripetuti
+      tbody.onclick = (e) => {
+        const tr = e.target.closest("tr");
+        if (!tr) return;
+        // Evita l'apertura se si clicca direttamente su checkbox o pulsanti interni
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+        const idV = tr.getAttribute("data-id-veicolo");
+        if (idV) mostraDettagliDaRecordId(idV);
+      };
+
+      // Utilizzo di DocumentFragment per renderizzare l'intera tabella in un solo colpo in memoria (velocità massima)
+      const fragment = document.createDocumentFragment();
+
       arr.forEach(r => {
         const tr = document.createElement("tr");
+        const idVeicoloVal = String(r[chiaveCampo(r, "id_veicolo")] || "").trim();
+        tr.setAttribute("data-id-veicolo", idVeicoloVal);
+        tr.style.cursor = "pointer";
+
         if (r[chiaveCampo(r, "prenotato_da")]?.trim()) tr.classList.add("highlight");
 
         colonneTabella.forEach(col => {
@@ -1184,7 +1207,6 @@
             td.appendChild(tdInput);
           } else if (col.whatsapp) {
             const van = String(r[chiaveCampo(r, "VAN")] || "").trim();
-            const idVeicolo = String(r[chiaveCampo(r, "id_veicolo")] || "").trim();
             if (van) {
               const messaggio = `ciao, mi potresti prenotare il VAN ${van}`;
               const linkWhatsApp = document.createElement("a");
@@ -1196,7 +1218,7 @@
               
               linkWhatsApp.addEventListener("click", ev => {
                 ev.stopPropagation();
-                inviaLogAttivita(`Prenotazione WhatsApp cliccata - VAN: ${van} (ID: ${idVeicolo})`);
+                inviaLogAttivita(`Prenotazione WhatsApp cliccata - VAN: ${van} (ID: ${idVeicoloVal})`);
               });
 
               td.appendChild(linkWhatsApp);
@@ -1204,8 +1226,7 @@
               td.textContent = "—";
             }
           } else if (col.scheda) {
-            const idVeicolo = String(r[chiaveCampo(r, "id_veicolo")] || "").trim();
-            const urlSchedaPdf = schedePdf[idVeicolo];
+            const urlSchedaPdf = schedePdf[idVeicoloVal];
             if (urlSchedaPdf) {
               const btnPdf = document.createElement("button");
               btnPdf.textContent = "📄 Apri";
@@ -1213,7 +1234,7 @@
               
               btnPdf.addEventListener("click", ev => {
                 ev.stopPropagation();
-                inviaLogAttivita(`Apertura/Download Dettagli Allestimento PDF - Veicolo ID: ${idVeicolo}`);
+                inviaLogAttivita(`Apertura/Download Dettagli Allestimento PDF - Veicolo ID: ${idVeicoloVal}`);
                 apriPdfOttimizzato(urlSchedaPdf);
               });
 
@@ -1255,10 +1276,10 @@
           }
           tr.appendChild(td);
         });
-        tr.style.cursor = "pointer";
-        tr.onclick = () => mostraDettagli(r);
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
       });
+
+      tbody.appendChild(fragment);
       t.appendChild(tbody);
       cont.innerHTML = "";
       cont.appendChild(t);
