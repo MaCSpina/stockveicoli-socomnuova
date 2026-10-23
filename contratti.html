@@ -238,19 +238,34 @@
       return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
     }
 
-    // Filtro intelligente per mostrare solo i contratti dell'agente loggato
+    // Funzione intelligente per normalizzare e pulire stringhe (rimuove apostrofi, spazi, punti e accenti)
+    function normalizzaTesto(str) {
+      if (!str) return "";
+      return String(str)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Rimuove gli accenti
+        .replace(/['`’\s\.\-_]/g, ""); // Rimuove apostrofi, spazi, punti, trattini, underscore
+    }
+
+    // Filtro intelligente per mostrare solo i contratti dell'agente loggato (gestisce apostrofi e spazi)
     function filtraPerAgenteLoggato(arrDati) {
       if (userRole === "admin" || userRole === "supervisor") {
         return arrDati; // Admin e Supervisor vedono tutto
       }
 
-      const userLower = currentUser.toLowerCase().trim();
-      const cognomeUser = userLower.includes(".") ? userLower.split(".")[1] : userLower;
+      const userNorm = normalizzaTesto(currentUser);
+      const parti = currentUser.split(".");
+      const cognomeUserNorm = parti.length > 1 ? normalizzaTesto(parti.slice(1).join(".")) : userNorm;
 
       return arrDati.filter(row => {
-        const agenteRecord = String(row["agente"] || "").toLowerCase();
-        if (!agenteRecord) return false;
-        return agenteRecord.includes(userLower) || (cognomeUser && agenteRecord.includes(cognomeUser));
+        const agenteRecord = String(row["agente"] || "");
+        const agenteNorm = normalizzaTesto(agenteRecord);
+
+        if (!agenteNorm) return false;
+
+        return agenteNorm.includes(userNorm) || 
+               (cognomeUserNorm && agenteNorm.includes(cognomeUserNorm)) ||
+               (cognomeUserNorm && cognomeUserNorm.includes(agenteNorm));
       });
     }
 
@@ -284,7 +299,7 @@
             return newObj;
           });
 
-          // Applica restrizione in base al ruolo
+          // Applica restrizione in base al ruolo (con controllo normalizzato)
           dati = filtraPerAgenteLoggato(datiGrezzi);
 
           if (gistData && gistData.updated_at) {
@@ -307,7 +322,6 @@
       div.innerHTML = "";
       
       campiFiltro.forEach(col => {
-        // Se l'utente è un agente, non mostriamo il filtro per la colonna "agente"
         if (userRole === "agente" && col === "agente") return;
 
         let valoriUnici = [...new Set(dati.map(r => r[col]).filter(Boolean))];
@@ -473,7 +487,7 @@
       inviaLogAttivita("Reset filtri Contratti");
       aggiornaOpzioniFiltri();
       mostraTabella(dati);
-      document.getElementById("msg").textContent = `${dati.length} contratti trovati`;
+      mostraMessaggio(`${dati.length} contratti trovati`);
     }
 
     function logout() {
