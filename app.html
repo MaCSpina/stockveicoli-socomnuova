@@ -331,12 +331,9 @@
       }
     }
 
-    // Apri PDF in modale interna e gestione download pulita senza schermate bianche su iOS
-    function apriPdfOttimizzato(urlOriginale) {
+function apriPdfOttimizzato(urlOriginale) {
       if (!urlOriginale) return;
 
-      const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
-      
       let pdfModal = document.getElementById("pdfViewerModal");
       if (!pdfModal) {
         pdfModal = document.createElement("div");
@@ -361,7 +358,9 @@
 
       window._correntePdfUrl = urlOriginale;
       const iframe = document.getElementById("pdfIframe");
-      iframe.src = urlViewer;
+      
+      // Utilizziamo direttamente l'URL originale: il browser lo aprirà in modo nativo e pulito
+      iframe.src = urlOriginale;
       pdfModal.style.display = "block";
     }
 
