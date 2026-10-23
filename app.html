@@ -261,11 +261,10 @@
       >
     </div>
 
-    <!-- Barra di Ordinamento Pratica -->
+    <!-- Barra di Ordinamento Pratica a Richiesta -->
     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; background: #1c2d42; padding: 10px 14px; border-radius: 8px; border: 1px solid #0055aa;">
       <span style="font-size: 0.9em; font-weight: bold; color: #00e5ff;">🔄 Ordina tabella per:</span>
-      <select id="selectOrdinamento" onchange="applicaOrdinamentoSelect(this.value)" style="padding: 7px 10px; border-radius: 5px; border: 1px solid #0055aa; background: #fff; color: #333; font-size: 0.9em; flex: 1; min-width: 170px; max-width: 250px;">
-        <option value="">(Predefinito / ID Veicolo)</option>
+      <select id="selectOrdinamento" style="padding: 7px 10px; border-radius: 5px; border: 1px solid #0055aa; background: #fff; color: #333; font-size: 0.9em; flex: 1; min-width: 170px; max-width: 250px;">
         <option value="id_veicolo">ID Veicolo</option>
         <option value="descrizione">Descrizione</option>
         <option value="VAN">VAN</option>
@@ -274,7 +273,7 @@
         <option value="prezzo_vendita_web">Prezzo Vendita Web</option>
         <option value="data_inserimento_ord">Data Ins. Ordine</option>
       </select>
-      <button onclick="inviaInversioneOrdine()" style="padding: 7px 12px; background: #0055aa; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.88em;" title="Inverti ordine">↕ Inverti</button>
+      <button onclick="eseguiOrdinamentoPulsante()" style="padding: 7px 14px; background: #0055aa; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.88em;" title="Esegui / Inverti ordine">↕ Ordina / Inverti</button>
     </div>
 
     <!-- Record trovati e pulsanti azioni -->
@@ -316,7 +315,7 @@
     let mostraColonneExtra = false;
     let filtriSecondariCreati = false;
 
-    // Variabili per paginazione ad altissima velocità
+    // Variabili per paginazione
     const DIMENSIONE_PAGINA = 50;
     let limiteVisualizzati = DIMENSIONE_PAGINA;
 
@@ -946,17 +945,16 @@
       });
     }
 
+    // Algoritmo di ordinamento rapido eseguito solo su richiesta esplicita
     function ordinaColonna(campo) {
       if (!campo) return;
+      
       if (campoOrdinamento === campo) {
         ordineCrescente = !ordineCrescente;
       } else {
         campoOrdinamento = campo;
         ordineCrescente = true;
       }
-
-      const select = document.getElementById("selectOrdinamento");
-      if (select) select.value = campo;
 
       datiCorrenti.sort((a, b) => {
         const chiave = chiaveCampo(a, campo);
@@ -983,20 +981,9 @@
       mostraTabella(datiCorrenti, true);
     }
 
-    function applicaOrdinamentoSelect(campo) {
-      if (!campo) {
-        campoOrdinamento = null;
-        limiteVisualizzati = DIMENSIONE_PAGINA;
-        mostraTabella(datiCorrenti, true);
-        return;
-      }
-      ordinaColonna(campo);
-    }
-
-    function inviaInversioneOrdine() {
+    function eseguiOrdinamentoPulsante() {
       const select = document.getElementById("selectOrdinamento");
-      let campo = select.value || "id_veicolo";
-      select.value = campo;
+      const campo = select.value || "id_veicolo";
       ordinaColonna(campo);
     }
 
@@ -1117,8 +1104,6 @@
       };
 
       const fragment = document.createDocumentFragment();
-
-      // Renderizza solo la porzione visibile secondo la paginazione
       const sottoInsieme = arr.slice(0, limiteVisualizzati);
 
       sottoInsieme.forEach(r => {
@@ -1221,7 +1206,6 @@
       cont.innerHTML = "";
       cont.appendChild(t);
 
-      // Gestione del pulsante "Carica altri"
       const btnCarica = document.getElementById("btnCaricaAltri");
       if (arr.length > limiteVisualizzati) {
         btnCarica.style.display = "block";
