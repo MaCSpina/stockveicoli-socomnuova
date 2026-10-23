@@ -277,6 +277,65 @@
     let ipUtentePubblico = "In rilevamento...";
     let mostraColonneExtra = false;
 
+
+	// Variabili per la gestione dell'ordinamento
+    let campoOrdinamento = null;
+    let ordineCrescente = true;
+
+    function ordinaColonna(campo) {
+      if (!campo) return;
+      
+      // Se clicchiamo sulla stessa colonna, invertiamo l'ordine; altrimenti impostiamo la nuova colonna in modo crescente
+      if (campoOrdinamento === campo) {
+        ordineCrescente = !ordineCrescente;
+      } else {
+        campoOrdinamento = campo;
+        ordineCrescente = true;
+      }
+
+      // Eseguiamo l'ordinamento sull'array corrente filtrato
+      datiCorrenti.sort((a, b) => {
+        const chiave = chiaveCampo(a, campo);
+        let valA = a[chiave] || "";
+        let valB = b[chiave] || "";
+
+        // Gestione specifica per date
+        if (campiDate.some(c => c.toLowerCase() === campo.toLowerCase()) || campo === "data_inserimento_ord") {
+          valA = convertiDataInTimestamp(valA);
+          valB = convertiDataInTimestamp(valB);
+        } 
+        // Gestione specifica per numeri e prezzi
+        else if (["giorni_giacenza", "prezzo_vendita_web", "listino_originale", "prezzo_versione", "prezzo_opt"].includes(campo.toLowerCase())) {
+          valA = parseFloat(String(valA).replace(/€|\s/g, "").replace(/\./g, "").replace(",", ".")) || 0;
+          valB = parseFloat(String(valB).replace(/€|\s/g, "").replace(/\./g, "").replace(",", ".")) || 0;
+        } 
+        // Gestione testuale standard case-insensitive
+        else {
+          valA = String(valA).toLowerCase();
+          valB = String(valB).toLowerCase();
+        }
+
+        if (valA < valB) return ordineCrescente ? -1 : 1;
+        if (valA > valB) return ordineCrescente ? 1 : -1;
+        return 0;
+      });
+
+      // Ridisegniamo la tabella con i dati ordinati
+      mostraTabella(datiCorrenti);
+    }
+
+    function convertiDataInTimestamp(str) {
+      if (!str) return 0;
+      str = String(str).trim();
+      if (str.includes("/")) {
+        const parti = str.split(" ")[0].split("/");
+        if (parti.length === 3) {
+          return new Date(`${parti[2]}-${parti[1]}-${parti[0]}`).getTime() || 0;
+        }
+      }
+      return new Date(str).getTime() || 0;
+    }
+
     // Recupero Ruolo e Utente dalla sessione
     const userRole = sessionStorage.getItem("userRole") || "agente";
     const currentUser = sessionStorage.getItem("currentUser") || "Ospite";
@@ -976,13 +1035,94 @@ function logNavigazioneContratti(e) {
       const t = document.createElement("table");
       const thead = document.createElement("thead");
       const trh = document.createElement("tr");
+function mostraTabella(arr) {
+      datiCorrenti = arr; 
+      let colonneTabella = [
+        { label: "id_veicolo", campo: "id_veicolo" },
+        { label: "descrizione", campo: "descrizione" },
+        { label: "des_colore", campo: "des_colore" },
+        { label: "VAN", campo: "VAN" },
+        { label: "Prenota via WhatsApp", whatsapp: true },
+        { label: "TELAIO", campo: "telaio" },
+        { label: "descri_status", campo: "descri_status" },
+        { label: "stato_avanz_ordine", campo: "stato_avanz_ordine" },
+        { label: "giorni_giacenza", campo: "giorni_giacenza" },
+        { label: "data_arrivo_prev", campo: "data_arrivo_prev" },
+        { label: "descr_passo", campo: "descr_passo" },
+        { label: "note", campo: "note" },
+        { label: "tipo_allestimento", campo: "tipo_allestimento" },
+        { label: "Dettagli allestimento", scheda: true },
+        { label: "prezzo_vendita_web", campo: "prezzo_vendita_web" },
+        { label: "prenotato_da", campo: "prenotato_da" },
+        { label: "scadenza_pren", campo: "scadenza_pren" },
+        { label: "nota_pren", campo: "nota_pren" }
+      ];
+
+      if (userRole === "agente") {
+        colonneTabella = colonneTabella.filter(col => col.campo !== "nota_pren");
+      }
+
+      if (mostraColonneExtra) {
+        colonneTabella.push(
+          { label: "Data Ins. Ordine", campo: "data_inserimento_ord" },
+          { label: "Listino Totale d'acquisto", campo: "listino_originale" },
+          { label: "Listino Base", campo: "prezzo_versione" },
+          { label: "Listino opt", campo: "prezzo_opt" }
+        );
+      }
+
+      const campiInGrassetto = new Set([
+        "descrizione", "descri_status", "stato_avanz_ordine",
+        "data_arrivo_prev", "tipo_allestimento", "prezzo_vendita_web",
+        "prenotato_da", "scadenza_pren", "nota_pren",
+        "listino_originale", "prezzo_versione", "prezzo_opt"
+      ]);
+
+      function formattaPrezzoEuro(valore) {
+        if (valore === null || valore === undefined || String(valore).trim() === "") return "";
+        if (typeof valore === "number") {
+          return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valore);
+        }
+        let testo = String(valore).trim().replace(/€|\s/g, "");
+        if (testo.includes(",")) {
+          testo = testo.replace(/\./g, "").replace(",", ".");
+        }
+        const numero = Number(testo);
+        if (!Number.isFinite(numero)) return String(valore);
+        return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numero);
+      }
+
+      const cont = document.getElementById("tabella-container");
+      const t = document.createElement("table");
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+
+      // ---> SOSTITUISCI QUESTA PARTE <---
       colonneTabella.forEach(col => {
         const th = document.createElement("th");
-        th.textContent = col.label;
+        let testoLabel = col.label;
+
+        // Se la colonna ha un campo associato, la rendiamo cliccabile per l'ordinamento
+        if (col.campo) {
+          th.style.cursor = "pointer";
+          th.title = "Clicca per ordinare";
+          
+          if (campoOrdinamento === col.campo) {
+            testoLabel += ordineCrescente ? " ▲" : " ▼";
+          } else {
+            testoLabel += " ↕";
+          }
+
+          th.onclick = () => ordinaColonna(col.campo);
+        }
+
+        th.textContent = testoLabel;
         trh.appendChild(th);
       });
+ 
       thead.appendChild(trh);
       t.appendChild(thead);
+      
 
       const tbody = document.createElement("tbody");
       arr.forEach(r => {
