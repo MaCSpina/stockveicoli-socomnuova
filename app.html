@@ -94,11 +94,13 @@
     #tabella-container td { white-space: normal; }
     #tabella-container tr.highlight { background-color: #fdd !important; }
     
-    /* Area messaggi e pulsante riepilogo in alto */
-    .status-bar { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
-    #msg { font-weight: bold; color: #fff; }
+    /* Area messaggi e pulsanti azione in alto alla tabella */
+    .status-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+    #msg { font-weight: bold; color: #fff; margin-right: 5px; }
     .btn-riepilogo { padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #16803c; color: white; border: none; border-radius: 5px; font-weight: bold; }
     .btn-riepilogo:hover { background: #126530; }
+    .btn-copia-van { padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #0284c7; color: white; border: none; border-radius: 5px; font-weight: bold; }
+    .btn-copia-van:hover { background: #0369a1; }
 
     #filtri-attivi { margin-bottom: 15px; font-style: italic; color: #ffcccc; font-weight: bold; }
     .badge { background: #d32f2f; padding: 4px 8px; border-radius: 12px; margin-right: 8px; display: inline-flex; align-items: center; color: #fff; font-weight: bold; }
@@ -226,7 +228,6 @@
     <div class="toolbar">
       <button onclick="resettaFiltro()">Reset Filtro</button>
       <button onclick="caricaDati()">Aggiorna</button>
-      <button onclick="copiaVanSelezionati()" style="background: #0284c7;">📋 Copia VAN Selezionati</button>
       <button onclick="toggleColonneExtra()" id="btnExtraCols" style="background: #1769aa;">📈 Mostra e Nascondi Listini e data ordine</button>
     </div>
 
@@ -241,9 +242,10 @@
       >
     </div>
 
-    <!-- Record trovati e pulsante Riepilogo Selezione -->
+    <!-- Record trovati e pulsanti azioni sopra tabella -->
     <div class="status-bar">
       <div id="msg"></div>
+      <button class="btn-copia-van" onclick="copiaVanSelezionati()">📋 Copia VAN Selezionati</button>
       <button class="btn-riepilogo" onclick="apriRiepilogo()">📊 Riepilogo Selezione</button>
     </div>
 
