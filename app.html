@@ -38,7 +38,7 @@
     }
     .btn-contratti-nav:hover { background: #12632e; }
 
-    /* Filtri a Caselle di Spunta (Checkbox box unificati) */
+    /* Filtri a Caselle di Spunta */
     .filtri { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
     .filtro { display: flex; flex-direction: column; min-width: 180px; flex: 1; max-width: 300px; }
     .filtro-box {
@@ -94,7 +94,7 @@
     #tabella-container td { white-space: normal; }
     #tabella-container tr.highlight { background-color: #fdd !important; }
     
-    /* Area messaggi e pulsanti azione in alto alla tabella */
+    /* Area messaggi e pulsanti azione */
     .status-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
     #msg { font-weight: bold; color: #fff; margin-right: 5px; }
     .btn-riepilogo { padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #16803c; color: white; border: none; border-radius: 5px; font-weight: bold; }
@@ -109,6 +109,25 @@
     .toolbar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
     .toolbar button { padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #0055aa; color: white; border: none; border-radius: 5px; font-weight: bold; }
     .toolbar button:hover { background: #004080; }
+
+    /* Pulsante Carica Altri */
+    .btn-carica-altri {
+      display: block;
+      width: 100%;
+      max-width: 300px;
+      margin: 20px auto;
+      padding: 12px;
+      background: #0055aa;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1em;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .btn-carica-altri:hover { background: #003366; }
 
     /* Animazione dello spinner di caricamento */
     @keyframes spin {
@@ -242,7 +261,7 @@
       >
     </div>
 
-    <!-- Barra di Ordinamento Pratica per Mobile e Desktop -->
+    <!-- Barra di Ordinamento Pratica -->
     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; background: #1c2d42; padding: 10px 14px; border-radius: 8px; border: 1px solid #0055aa;">
       <span style="font-size: 0.9em; font-weight: bold; color: #00e5ff;">🔄 Ordina tabella per:</span>
       <select id="selectOrdinamento" onchange="applicaOrdinamentoSelect(this.value)" style="padding: 7px 10px; border-radius: 5px; border: 1px solid #0055aa; background: #fff; color: #333; font-size: 0.9em; flex: 1; min-width: 170px; max-width: 250px;">
@@ -255,10 +274,10 @@
         <option value="prezzo_vendita_web">Prezzo Vendita Web</option>
         <option value="data_inserimento_ord">Data Ins. Ordine</option>
       </select>
-      <button onclick="inviaInversioneOrdine()" style="padding: 7px 12px; background: #0055aa; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.88em;" title="Inverti ordine (Crescente/Decrescente)">↕ Inverti</button>
+      <button onclick="inviaInversioneOrdine()" style="padding: 7px 12px; background: #0055aa; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.88em;" title="Inverti ordine">↕ Inverti</button>
     </div>
 
-    <!-- Record trovati e pulsanti azioni sopra tabella -->
+    <!-- Record trovati e pulsanti azioni -->
     <div class="status-bar">
       <div id="msg"></div>
       <button class="btn-copia-van" onclick="copiaVanSelezionati()">📋 Copia VAN Selezionati</button>
@@ -278,13 +297,14 @@
       </button>
     </div>
 
-    <!-- Sezione Filtri Secondari (A scomparsa) -->
+    <!-- Sezione Filtri Secondari -->
     <div id="box-secondari" style="display: none; background: #182535; padding: 12px; border-radius: 8px; border: 1px dashed #0055aa; margin-bottom: 15px;">
       <div style="margin-bottom: 10px; font-weight: bold; color: #94a3b8; font-size: 0.9em;">⚙️ Filtri Secondari</div>
       <div class="filtri" id="parametri-secondari"></div>
     </div>
 
     <div id="tabella-container"></div>
+    <button id="btnCaricaAltri" class="btn-carica-altri" style="display:none;" onclick="caricaAltriRecord()">⬇ Carica altri veicoli</button>
   </main>
 
   <script>
@@ -296,24 +316,21 @@
     let mostraColonneExtra = false;
     let filtriSecondariCreati = false;
 
-    // Variabili per l'ordinamento dinamico delle colonne
+    // Variabili per paginazione ad altissima velocità
+    const DIMENSIONE_PAGINA = 50;
+    let limiteVisualizzati = DIMENSIONE_PAGINA;
+
     let campoOrdinamento = null;
     let ordineCrescente = true;
 
-    // Mappa di memorizzazione rapida dei record per indice (per la delegazione degli eventi)
-    let mappaRecordTabella = new Map();
-
-    // Recupero Ruolo e Utente dalla sessione
     const userRole = sessionStorage.getItem("userRole") || "agente";
     const currentUser = sessionStorage.getItem("currentUser") || "Ospite";
 
-    // Campi definiti come Filtri Principali
     const campiPrincipali = [
       "des_marca", "tipo_veicolo", "descr_passo", "descr_versione", 
       "descri_status", "descrizione", "prenotato_da", "tipo_allestimento"
     ];
 
-    // Funzione per estrarre ed evidenziare il Model Year (MY) dalla descrizione
     function estraiModelYear(descrizione) {
       if (!descrizione) return null;
       const regex = /MY[\s\.]*(\d{2,4})/i;
@@ -326,7 +343,6 @@
       return null;
     }
 
-    // Funzione per copiare i VAN selezionati negli appunti
     function copiaVanSelezionati() {
       const checkboxesChecked = document.querySelectorAll('.row-checkbox:checked');
       if (checkboxesChecked.length === 0) {
@@ -351,13 +367,11 @@
       });
     }
 
-    // Toggle per "Seleziona Tutti"
     function toggleSelezionaTutti(source) {
       const checkboxes = document.querySelectorAll('.row-checkbox');
       checkboxes.forEach(cb => cb.checked = source.checked);
     }
 
-    // Toggle Mostra/Nascondi Listini e Data Ordine
     function toggleColonneExtra() {
       mostraColonneExtra = !mostraColonneExtra;
       const btn = document.getElementById("btnExtraCols");
@@ -365,17 +379,14 @@
       if (mostraColonneExtra) {
         btn.style.background = "#c62828";
         btn.textContent = "📉 Nascondi Listini e data ordine";
-        inviaLogAttivita("Visualizzazione colonne extra (Listini e data ordine) attivata");
       } else {
         btn.style.background = "#1769aa";
         btn.textContent = "📈 Mostra e Nascondi Listini e data ordine";
-        inviaLogAttivita("Visualizzazione colonne extra (Listini e data ordine) disattivata");
       }
       
-      mostraTabella(datiCorrenti);
+      mostraTabella(datiCorrenti, true);
     }
 
-    // Toggle per mostrare/nascondere i filtri secondari (creazione Lazy per massima velocità)
     function toggleFiltriSecondari() {
       const box = document.getElementById("box-secondari");
       const btn = document.getElementById("btn-toggle-secondari");
@@ -394,10 +405,8 @@
       }
     }
 
-    // Apri PDF in modale interna e gestione download pulita
     function apriPdfOttimizzato(urlOriginale) {
       if (!urlOriginale) return;
-
       const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
 
       let pdfModal = document.getElementById("pdfViewerModal");
@@ -436,10 +445,8 @@
       }
     }
 
-    // Navigazione istantanea senza blocchi di rete
     function logNavigazioneContratti(e) {
       if (e) e.preventDefault();
-
       const overlay = document.getElementById("loadingOverlay");
       if (overlay) overlay.style.display = "flex";
 
@@ -469,10 +476,7 @@
 
       if (navigator.share && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
         try {
-          await navigator.share({
-            title: 'Scheda Allestimento Veicolo',
-            url: url
-          });
+          await navigator.share({ title: 'Scheda Allestimento Veicolo', url: url });
           return;
         } catch (e) {}
       }
@@ -481,14 +485,12 @@
         const response = await fetch(url);
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
-        
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = blobUrl;
         a.download = 'Allestimento_Veicolo.pdf';
         document.body.appendChild(a);
         a.click();
-        
         window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(a);
       } catch (err) {
@@ -503,7 +505,6 @@
       if (pdfModal) pdfModal.style.display = "none";
     }
 	  
-    // --- TIMEOUT DI INATTIVITÀ (1 ORA) ---
     const TIMEOUT_INATTIVITA_MS = 60 * 60 * 1000;
     let timerInattivita;
 
@@ -517,14 +518,8 @@
       if (logUrl) {
         try {
           await fetch(logUrl, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              utente: currentUser, 
-              note: "Disconnessione automatica per inattività (1 ora) | IP: " + ipUtentePubblico,
-              dispositivo: navigator.userAgent 
-            })
+            method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ utente: currentUser, note: "Disconnessione automatica per inattività (1 ora) | IP: " + ipUtentePubblico, dispositivo: navigator.userAgent })
           });
         } catch(e) {}
       }
@@ -559,22 +554,16 @@
     function formattaData(str) {
       if (!str) return "";
       str = String(str).trim();
-      
       if (str.includes("/")) {
         const parti = str.split(" ")[0].split("/");
         if (parti.length === 3) {
-          const gg = parti[0].padStart(2, '0');
-          const mm = parti[1].padStart(2, '0');
-          const yyyy = parti[2];
+          const gg = parti[0].padStart(2, '0'), mm = parti[1].padStart(2, '0'), yyyy = parti[2];
           return `${gg}/${mm}/${yyyy}`;
         }
       }
-      
       const d = new Date(str);
       if (isNaN(d)) return str;
-      const gg = String(d.getDate()).padStart(2,'0'),
-            mm = String(d.getMonth()+1).padStart(2,'0'),
-            yyyy = d.getFullYear();
+      const gg = String(d.getDate()).padStart(2,'0'), mm = String(d.getMonth()+1).padStart(2,'0'), yyyy = d.getFullYear();
       return `${gg}/${mm}/${yyyy}`;
     }
 
@@ -594,11 +583,7 @@
       fetch(BASE_URL + "?nocache=" + Date.now())
         .then(r => r.text())
         .then(testo => {
-          const parsed = Papa.parse(testo.trim(), {
-            delimiter: ";",
-            header: true,
-            skipEmptyLines: true
-          });
+          const parsed = Papa.parse(testo.trim(), { delimiter: ";", header: true, skipEmptyLines: true });
 
           if (parsed.meta && parsed.meta.fields) {
             intestazione = parsed.meta.fields.map(pulisciTesto);
@@ -608,9 +593,7 @@
 
           dati = parsed.data.map(row => {
             const newObj = {};
-            Object.keys(row).forEach(k => {
-              newObj[pulisciTesto(k)] = pulisciTesto(row[k]);
-            });
+            Object.keys(row).forEach(k => { newObj[pulisciTesto(k)] = pulisciTesto(row[k]); });
             return newObj;
           });
 
@@ -618,10 +601,11 @@
           if (ultimo) document.getElementById("ultimo-aggiornamento").textContent = "Ultimo aggiornamento: " + ultimo;
 
           datiCorrenti = [...dati];
+          limiteVisualizzati = DIMENSIONE_PAGINA;
           
           requestAnimationFrame(() => {
             creaFiltriPrincipali();
-            mostraTabella(datiCorrenti);
+            mostraTabella(datiCorrenti, true);
             mostraMessaggio(`${datiCorrenti.length} record trovati`);
           });
         });
@@ -632,21 +616,11 @@
         .then(r => r.text())
         .then(text => {
           if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-          const parsed = Papa.parse(text.trim(), {
-            delimiter: ";",
-            header: true,
-            skipEmptyLines: true
-          });
-
+          const parsed = Papa.parse(text.trim(), { delimiter: ";", header: true, skipEmptyLines: true });
           optionalDati = parsed.data.map(row => {
             const obj = {};
             Object.keys(row).forEach(k => obj[pulisciTesto(k)] = pulisciTesto(row[k]));
-            return {
-              codice: obj.optional || "",
-              descrizione: obj.descrizione || "",
-              prezzo: obj.prezzo || "",
-              id_veicolo: obj.id_veicolo || ""
-            };
+            return { codice: obj.optional || "", descrizione: obj.descrizione || "", prezzo: obj.prezzo || "", id_veicolo: obj.id_veicolo || "" };
           });
         })
         .catch(err => console.error("Errore fetch optional:", err));
@@ -660,12 +634,7 @@
         })
         .then(text => {
           if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-          const parsed = Papa.parse(text.trim(), {
-            delimiter: ";",
-            header: true,
-            skipEmptyLines: true
-          });
-
+          const parsed = Papa.parse(text.trim(), { delimiter: ";", header: true, skipEmptyLines: true });
           schedePdf = {};
           parsed.data.forEach(row => {
             const id = pulisciTesto(row["id_veicolo"]);
@@ -716,11 +685,7 @@
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
         if (logUrl) {
             try {
-                const payload = JSON.stringify({ 
-                    utente: currentUser, 
-                    note: "Disconnessione (Logout) | IP: " + ipUtentePubblico,
-                    dispositivo: navigator.userAgent 
-                });
+                const payload = JSON.stringify({ utente: currentUser, note: "Disconnessione (Logout) | IP: " + ipUtentePubblico, dispositivo: navigator.userAgent });
                 if (navigator.sendBeacon) {
                     navigator.sendBeacon(logUrl, new Blob([payload], { type: "text/plain;charset=UTF-8" }));
                 } else {
@@ -728,7 +693,6 @@
                 }
             } catch(e) {}
         }
-
         sessionStorage.clear();
         window.location.href = "index.html";
     }
@@ -737,11 +701,7 @@
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
         if (logUrl) {
             try {
-                const payload = JSON.stringify({ 
-                    utente: currentUser, 
-                    note: testoNota + " | IP: " + ipUtentePubblico,
-                    dispositivo: navigator.userAgent 
-                });
+                const payload = JSON.stringify({ utente: currentUser, note: testoNota + " | IP: " + ipUtentePubblico, dispositivo: navigator.userAgent });
                 if (navigator.sendBeacon) {
                     navigator.sendBeacon(logUrl, new Blob([payload], { type: "text/plain;charset=UTF-8" }));
                 } else {
@@ -753,24 +713,12 @@
 
     function tracciaChiusura() {
         const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
-        
         if (currentUser && logUrl) {
-            const payload = JSON.stringify({ 
-                utente: currentUser, 
-                note: "Chiusura scheda / abbandono pagina | IP: " + ipUtentePubblico,
-                dispositivo: navigator.userAgent 
-            });
+            const payload = JSON.stringify({ utente: currentUser, note: "Chiusura scheda / abbandono pagina | IP: " + ipUtentePubblico, dispositivo: navigator.userAgent });
             if (navigator.sendBeacon) {
-                const blob = new Blob([payload], { type: "text/plain;charset=UTF-8" });
-                navigator.sendBeacon(logUrl, blob);
+                navigator.sendBeacon(logUrl, new Blob([payload], { type: "text/plain;charset=UTF-8" }));
             } else {
-                fetch(logUrl, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: payload,
-                    keepalive: true
-                });
+                fetch(logUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true });
             }
         }
     }
@@ -778,9 +726,7 @@
     window.addEventListener("pagehide", tracciaChiusura);
     window.addEventListener("beforeunload", tracciaChiusura);
 
-    window.onload = () => {
-        avviaConfigurazione();
-    };
+    window.onload = () => { avviaConfigurazione(); };
 
     function mostraDettagliDaRecordId(idVeicolo) {
       const veicoloTrovato = dati.find(r => String(r.id_veicolo).trim() === String(idVeicolo).trim());
@@ -814,9 +760,7 @@
       }
 
       let htmlDestra = "";
-      const optional = optionalDati
-        .filter(o => o.id_veicolo === veicoloTrovato.id_veicolo)
-        .sort((a, b) => a.codice.localeCompare(b.codice));
+      const optional = optionalDati.filter(o => o.id_veicolo === veicoloTrovato.id_veicolo).sort((a, b) => a.codice.localeCompare(b.codice));
 
       if (optional.length) {
          htmlDestra += `<h3>Optional:</h3><div class="optional-wrapper"><table class='tabella-optional'><thead><tr><th>Codice</th><th>Descrizione</th><th>Prezzo</th></tr></thead><tbody>`;
@@ -832,7 +776,6 @@
       modal.style.display = "block";
     }
 
-    // Creazione veloce dei soli Filtri Principali all'avvio
     function creaFiltriPrincipali() {
       const divPrincipali = document.getElementById("parametri-principali");
       divPrincipali.innerHTML = "";
@@ -878,7 +821,6 @@
       });
     }
 
-    // Creazione ritardata (Lazy) dei Filtri Secondari
     function creaFiltriSecondari() {
       const divSecondari = document.getElementById("parametri-secondari");
       divSecondari.innerHTML = "";
@@ -1004,10 +946,8 @@
       });
     }
 
-    // Gestione ordinamento dinamico per colonna
     function ordinaColonna(campo) {
       if (!campo) return;
-      
       if (campoOrdinamento === campo) {
         ordineCrescente = !ordineCrescente;
       } else {
@@ -1026,12 +966,10 @@
         if (campiDate.some(c => c.toLowerCase() === campo.toLowerCase()) || campo === "data_inserimento_ord") {
           valA = convertiDataInTimestamp(valA);
           valB = convertiDataInTimestamp(valB);
-        } 
-        else if (["giorni_giacenza", "prezzo_vendita_web", "listino_originale", "prezzo_versione", "prezzo_opt"].includes(campo.toLowerCase())) {
+        } else if (["giorni_giacenza", "prezzo_vendita_web", "listino_originale", "prezzo_versione", "prezzo_opt"].includes(campo.toLowerCase())) {
           valA = parseFloat(String(valA).replace(/€|\s/g, "").replace(/\./g, "").replace(",", ".")) || 0;
           valB = parseFloat(String(valB).replace(/€|\s/g, "").replace(/\./g, "").replace(",", ".")) || 0;
-        } 
-        else {
+        } else {
           valA = String(valA).toLowerCase();
           valB = String(valB).toLowerCase();
         }
@@ -1041,13 +979,15 @@
         return 0;
       });
 
-      mostraTabella(datiCorrenti);
+      limiteVisualizzati = DIMENSIONE_PAGINA;
+      mostraTabella(datiCorrenti, true);
     }
 
     function applicaOrdinamentoSelect(campo) {
       if (!campo) {
         campoOrdinamento = null;
-        mostraTabella(datiCorrenti);
+        limiteVisualizzati = DIMENSIONE_PAGINA;
+        mostraTabella(datiCorrenti, true);
         return;
       }
       ordinaColonna(campo);
@@ -1055,11 +995,8 @@
 
     function inviaInversioneOrdine() {
       const select = document.getElementById("selectOrdinamento");
-      let campo = select.value;
-      if (!campo) {
-        campo = "id_veicolo";
-        select.value = campo;
-      }
+      let campo = select.value || "id_veicolo";
+      select.value = campo;
       ordinaColonna(campo);
     }
 
@@ -1075,9 +1012,14 @@
       return new Date(str).getTime() || 0;
     }
 
-    function mostraTabella(arr) {
+    function caricaAltriRecord() {
+      limiteVisualizzati += DIMENSIONE_PAGINA;
+      mostraTabella(datiCorrenti, false);
+    }
+
+    function mostraTabella(arr, resetPagina = true) {
       datiCorrenti = arr; 
-      mappaRecordTabella.clear();
+      if (resetPagina) limiteVisualizzati = DIMENSIONE_PAGINA;
 
       let colonneTabella = [
         { label: "✅", checkboxCol: true },
@@ -1127,9 +1069,7 @@
           return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valore);
         }
         let testo = String(valore).trim().replace(/€|\s/g, "");
-        if (testo.includes(",")) {
-          testo = testo.replace(/\./g, "").replace(",", ".");
-        }
+        if (testo.includes(",")) testo = testo.replace(/\./g, "").replace(",", ".");
         const numero = Number(testo);
         if (!Number.isFinite(numero)) return String(valore);
         return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numero);
@@ -1150,13 +1090,11 @@
         } else if (col.campo) {
           th.style.cursor = "pointer";
           th.title = "Clicca per ordinare";
-          
           if (campoOrdinamento === col.campo) {
             testoLabel += ordineCrescente ? " ▲" : " ▼";
           } else {
             testoLabel += " ↕";
           }
-
           th.onclick = () => ordinaColonna(col.campo);
           th.textContent = testoLabel;
         } else {
@@ -1170,21 +1108,20 @@
       t.appendChild(thead);
 
       const tbody = document.createElement("tbody");
-      
-      // Delegazione degli eventi per aprire i dettagli istantaneamente senza listener ripetuti
       tbody.onclick = (e) => {
         const tr = e.target.closest("tr");
         if (!tr) return;
-        // Evita l'apertura se si clicca direttamente su checkbox o pulsanti interni
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
         const idV = tr.getAttribute("data-id-veicolo");
         if (idV) mostraDettagliDaRecordId(idV);
       };
 
-      // Utilizzo di DocumentFragment per renderizzare l'intera tabella in un solo colpo in memoria (velocità massima)
       const fragment = document.createDocumentFragment();
 
-      arr.forEach(r => {
+      // Renderizza solo la porzione visibile secondo la paginazione
+      const sottoInsieme = arr.slice(0, limiteVisualizzati);
+
+      sottoInsieme.forEach(r => {
         const tr = document.createElement("tr");
         const idVeicoloVal = String(r[chiaveCampo(r, "id_veicolo")] || "").trim();
         tr.setAttribute("data-id-veicolo", idVeicoloVal);
@@ -1283,6 +1220,15 @@
       t.appendChild(tbody);
       cont.innerHTML = "";
       cont.appendChild(t);
+
+      // Gestione del pulsante "Carica altri"
+      const btnCarica = document.getElementById("btnCaricaAltri");
+      if (arr.length > limiteVisualizzati) {
+        btnCarica.style.display = "block";
+        btnCarica.textContent = `⬇ Carica altri veicoli (mostrati ${limiteVisualizzati} di ${arr.length})`;
+      } else {
+        btnCarica.style.display = "none";
+      }
     }
 
     function mostraMessaggio(txt) { document.getElementById("msg").textContent = txt; }
@@ -1358,7 +1304,6 @@
         badgeRicerca.textContent = `🔍 "${testoRicerca}"`;
         const btnResetRicerca = document.createElement("button");
         btnResetRicerca.textContent = "×";
-        btnResetRicerca.title = "Cancella ricerca";
         btnResetRicerca.onclick = () => {
           document.getElementById("input-ricerca-diretta").value = "";
           applicaFiltro();
@@ -1387,7 +1332,6 @@
           badge.textContent = `${col}: ${selvals.join(", ")}`;
           const btn = document.createElement("button");
           btn.textContent = "×";
-          btn.title = "Rimuovi questo filtro";
           btn.onclick = () => {
             box.querySelectorAll("input[type='checkbox']").forEach(chk => {
               if (selvals.includes(chk.value)) chk.checked = false;
@@ -1406,7 +1350,8 @@
       }
 
       aggiornaOpzioniFiltri();
-      mostraTabella(arr);
+      limiteVisualizzati = DIMENSIONE_PAGINA;
+      mostraTabella(arr, true);
       mostraMessaggio(`${arr.length} record trovati`);
     }
 
@@ -1425,7 +1370,8 @@
       inviaLogAttivita("Reset filtri effettuato");
 
       aggiornaOpzioniFiltri();
-      mostraTabella(dati);
+      limiteVisualizzati = DIMENSIONE_PAGINA;
+      mostraTabella(dati, true);
       mostraMessaggio(`${dati.length} record trovati`);
     }
 
