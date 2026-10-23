@@ -332,38 +332,50 @@
     }
 
 function apriPdfOttimizzato(urlOriginale) {
-      if (!urlOriginale) return;
+  if (!urlOriginale) return;
 
-      let pdfModal = document.getElementById("pdfViewerModal");
-      if (!pdfModal) {
-        pdfModal = document.createElement("div");
-        pdfModal.id = "pdfViewerModal";
-        pdfModal.className = "modal-overlay";
-        pdfModal.innerHTML = `
-          <div class="modal-content" style="height: 90vh; max-height: 90vh; display: flex; flex-direction: column; padding: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-              <h3 style="margin:0; font-size: 1.1em; color: #123e63;">📄 Dettagli Allestimento PDF</h3>
-              <div style="display: flex; gap: 8px;">
-                <button id="btnDownloadPdf" onclick="scaricaPdfSicuro()" style="background: #16803c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.9em; display: inline-flex; align-items: center;">📥 Scarica / Salva</button>
-                <button onclick="chiudiPdfModale()" style="background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Chiudi ×</button>
-              </div>
-            </div>
-            <div style="flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 6px; border: 1px solid #ccc;">
-              <iframe id="pdfIframe" style="width: 100%; height: 100%; border: none;" src="about:blank"></iframe>
-            </div>
+  // URL per la visualizzazione tramite Google Viewer
+  const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
+
+  let pdfModal = document.getElementById("pdfViewerModal");
+  if (!pdfModal) {
+    pdfModal = document.createElement("div");
+    pdfModal.id = "pdfViewerModal";
+    pdfModal.className = "modal-overlay";
+    pdfModal.innerHTML = `
+      <div class="modal-content" style="height: 90vh; max-height: 90vh; display: flex; flex-direction: column; padding: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+          <h3 style="margin:0; font-size: 1.1em; color: #123e63;">📄 Dettagli Allestimento PDF</h3>
+          <div style="display: flex; gap: 8px;">
+            <button id="btnSwitchViewer" onclick="forzaAnteprimaNativa()" style="background: #1769aa; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85em;">🔄 Apri in modalità alternativa</button>
+            <button id="btnDownloadPdf" onclick="scaricaPdfSicuro()" style="background: #16803c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85em;">📥 Scarica / Salva</button>
+            <button onclick="chiudiPdfModale()" style="background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Chiudi ×</button>
           </div>
-        `;
-        document.body.appendChild(pdfModal);
-      }
+        </div>
+        <div style="flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 6px; border: 1px solid #ccc;">
+          <iframe id="pdfIframe" style="width: 100%; height: 100%; border: none;" src="about:blank"></iframe>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(pdfModal);
+  }
 
-      window._correntePdfUrl = urlOriginale;
-      const iframe = document.getElementById("pdfIframe");
-      
-      // Utilizziamo direttamente l'URL originale: il browser lo aprirà in modo nativo e pulito
-      iframe.src = urlOriginale;
-      pdfModal.style.display = "block";
-    }
+  window._correntePdfUrl = urlOriginale;
+  const iframe = document.getElementById("pdfIframe");
+  
+  // Carichiamo l'anteprima tramite Google Viewer (mantiene il comportamento visivo che preferisci)
+  iframe.src = urlViewer;
+  pdfModal.style.display = "block";
+}
 
+// Funzione di soccorso se Google Viewer mostra errori/file strano
+function forzaAnteprimaNativa() {
+  const iframe = document.getElementById("pdfIframe");
+  if (iframe && window._correntePdfUrl) {
+    iframe.src = window._correntePdfUrl;
+  }
+}
+	  
 function logNavigazioneContratti(e) {
   if (e) e.preventDefault();
 
