@@ -226,6 +226,7 @@
     <div class="toolbar">
       <button onclick="resettaFiltro()">Reset Filtro</button>
       <button onclick="caricaDati()">Aggiorna</button>
+      <button onclick="copiaVanSelezionati()" style="background: #0284c7;">📋 Copia VAN Selezionati</button>
       <button onclick="toggleColonneExtra()" id="btnExtraCols" style="background: #1769aa;">📈 Mostra e Nascondi Listini e data ordine</button>
     </div>
 
@@ -301,6 +302,37 @@
         return `MY${annoFormattato.slice(-2)}`;
       }
       return null;
+    }
+
+    // Funzione per copiare i VAN selezionati negli appunti
+    function copiaVanSelezionati() {
+      const checkboxesChecked = document.querySelectorAll('.row-checkbox:checked');
+      if (checkboxesChecked.length === 0) {
+        alert("Seleziona almeno un veicolo spuntando la casella nella tabella.");
+        return;
+      }
+      
+      const vans = Array.from(checkboxesChecked).map(cb => cb.value).filter(Boolean);
+      if (vans.length === 0) {
+        alert("Nessun VAN valido trovato tra gli elementi selezionati.");
+        return;
+      }
+
+      const testoDaCopiare = vans.join(", ");
+      
+      navigator.clipboard.writeText(testoDaCopiare).then(() => {
+        alert(`✅ ${vans.length} VAN copiati negli appunti:\n${testoDaCopiare}`);
+        inviaLogAttivita(`Copiati ${vans.length} VAN negli appunti: ${testoDaCopiare}`);
+      }).catch(err => {
+        console.error("Errore copia appunti:", err);
+        alert("Impossibile copiare negli appunti.");
+      });
+    }
+
+    // Toggle per "Seleziona Tutti"
+    function toggleSelezionaTutti(source) {
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      checkboxes.forEach(cb => cb.checked = source.checked);
     }
 
     // Toggle Mostra/Nascondi Listini e Data Ordine
@@ -963,6 +995,7 @@
     function mostraTabella(arr) {
       datiCorrenti = arr; 
       let colonneTabella = [
+        { label: "✅", checkboxCol: true },
         { label: "id_veicolo", campo: "id_veicolo" },
         { label: "descrizione", campo: "descrizione" },
         { label: "des_colore", campo: "des_colore" },
@@ -1026,7 +1059,10 @@
         const th = document.createElement("th");
         let testoLabel = col.label;
 
-        if (col.campo) {
+        if (col.checkboxCol) {
+          th.style.width = "30px";
+          th.innerHTML = '<input type="checkbox" onchange="toggleSelezionaTutti(this)" title="Seleziona/Deseleziona tutti" style="cursor:pointer; width:16px; height:16px;">';
+        } else if (col.campo) {
           th.style.cursor = "pointer";
           th.title = "Clicca per ordinare";
           
@@ -1037,9 +1073,11 @@
           }
 
           th.onclick = () => ordinaColonna(col.campo);
+          th.textContent = testoLabel;
+        } else {
+          th.textContent = testoLabel;
         }
 
-        th.textContent = testoLabel;
         trh.appendChild(th);
       });
 
@@ -1055,7 +1093,16 @@
           const td = document.createElement("td");
           td.setAttribute("data-label", col.label);
 
-          if (col.whatsapp) {
+          if (col.checkboxCol) {
+            const vanVal = String(r[chiaveCampo(r, "VAN")] || "").trim();
+            const tdInput = document.createElement("input");
+            tdInput.type = "checkbox";
+            tdInput.className = "row-checkbox";
+            tdInput.value = vanVal;
+            tdInput.style.cssText = "cursor: pointer; width: 16px; height: 16px;";
+            tdInput.onclick = (ev) => ev.stopPropagation(); // Evita l'apertura della modale del dettaglio
+            td.appendChild(tdInput);
+          } else if (col.whatsapp) {
             const van = String(r[chiaveCampo(r, "VAN")] || "").trim();
             const idVeicolo = String(r[chiaveCampo(r, "id_veicolo")] || "").trim();
             if (van) {
