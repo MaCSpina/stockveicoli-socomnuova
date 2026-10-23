@@ -3,4 +3,23 @@
   "URL_OPTIONAL": "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/stock_optional",
   "URL_SCHEDE_PDF": "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/pdf_veicoli.csv",
   "URL_LOG_SCRIPT": "https://script.google.com/macros/s/AKfycbwpWEeGJVx6r7wkgvc5T63UgCH_iQNIhq0_zwX_axy9A-_YOdYAOQH9CgjJxvnN1FdvLA/exec"
+
+  "UTENTI_RUOLI": {
+    "m.spina": "admin",
+    "m.formisano": "supervisor",
+    "m.valiante": "supervisor",
+    "g.valiante": "supervisor",
+    "l.derrico": "agente",
+    "s.derrico": "agente",
+    "g.siciliano": "agente",
+    "u.bianco": "agente",
+    "d.longo": "agente",
+    "v.sovali": "agente",
+    "c.ceglia": "agente",
+    "g.calabresi": "agente",
+    "s.ferraro": "agente",
+    "g.dimaggio": "agente",
+    "m.attanasio": "supervisor",
+    "m.romano": "supervisor"
+  }
 }
