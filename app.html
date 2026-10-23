@@ -45,13 +45,13 @@
       background: #f8f8f8;
       border: 1px solid #ccc;
       border-radius: 6px;
-      max-height: 120px;
+      max-height: 150px;
       overflow-y: auto;
       padding: 8px 10px;
       color: #333;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
     }
     .filtro-box label {
       font-weight: normal;
@@ -116,7 +116,7 @@
   .btn-contratti-nav { width: 100%; justify-content: center; padding: 10px 0; box-sizing: border-box; }
   .filtri { flex-direction: column; }
   .filtro { max-width: 100%; width: 100%; }
-  .filtro-box { max-height: 100px; }
+  .filtro-box { max-height: 120px; }
   .search-input { max-width: 100%; }
   
   #tabella-container table, #tabella-container thead, #tabella-container tbody, #tabella-container th, #tabella-container td, #tabella-container tr { display: block; }
@@ -741,7 +741,7 @@
       modal.style.display = "block";
     }
 
-    // Creazione Sdoppiata dei Filtri tra Principali e Secondari (con data_inserimento_ord visibile solo per admin)
+    // Creazione Sdoppiata dei Filtri (con data_inserimento_ord raggruppata Anno -> Mese -> Giorno a scalare per admin)
     function creaFiltri() {
       const divPrincipali = document.getElementById("parametri-principali");
       const divSecondari = document.getElementById("parametri-secondari");
@@ -751,12 +751,10 @@
       intestazione.forEach((col, i) => {
         const isDataInsOrd = (col.toLowerCase() === "data_inserimento_ord");
         
-        // Se il campo è escluso, saltiamo a meno che non sia data_inserimento_ord e l'utente sia admin
         if (campiEsclusiFiltri.includes(col)) {
           if (!(isDataInsOrd && userRole === "admin")) return;
         }
 
-        // Raccoglie i valori formattati se è una data
         let valoriUniciOriginali = [...new Set(dati.map(r => r[col]).filter(Boolean))];
         let mapValori = new Map();
         
@@ -775,17 +773,79 @@
         box.className = "filtro-box";
         box.setAttribute("data-col-index", i);
 
-        valoriUnici.forEach(vFormatted => {
-          const lbl = document.createElement("label");
-          const chk = document.createElement("input");
-          chk.type = "checkbox";
-          chk.value = vFormatted;
-          chk.onchange = () => applicaFiltro();
-          
-          lbl.appendChild(chk);
-          lbl.appendChild(document.createTextNode(vFormatted));
-          box.appendChild(lbl);
-        });
+        // Se è data_inserimento_ord, organizziamo a scalare: Anno -> Mese -> Giorno
+        if (isDataInsOrd) {
+          const albero = {};
+          valoriUnici.forEach(vFormatted => {
+            const parti = vFormatted.split('/');
+            if (parti.length === 3) {
+              const dd = parti[0];
+              const mm = parti[1];
+              const yyyy = parti[2];
+              
+              if (!albero[yyyy]) albero[yyyy] = {};
+              if (!albero[yyyy][mm]) albero[yyyy][mm] = [];
+              albero[yyyy][mm].push(vFormatted);
+            }
+          });
+
+          // Ordiniamo gli anni in ordine decrescente (più recente in alto)
+          const anni = Object.keys(albero).sort((a, b) => b.localeCompare(a));
+          const NOMI_MESI = {
+            "01": "Gennaio", "02": "Febbraio", "03": "Marzo", "04": "Aprile",
+            "05": "Maggio", "06": "Giugno", "07": "Luglio", "08": "Agosto",
+            "09": "Settembre", "10": "Ottobre", "11": "Novembre", "12": "Dicembre"
+          };
+
+          anni.forEach(yyyy => {
+            const divAnno = document.createElement("div");
+            divAnno.style.cssText = "font-weight:bold; color:#0284c7; margin-top:6px; font-size:0.9em; border-bottom:1px solid #e2e8f0; padding-bottom:2px;";
+            divAnno.textContent = `📅 Anno ${yyyy}`;
+            box.appendChild(divAnno);
+
+            const mesi = Object.keys(albero[yyyy]).sort((a, b) => b.localeCompare(a));
+            mesi.forEach(mm => {
+              const divMese = document.createElement("div");
+              divMese.style.cssText = "font-weight:bold; color:#475569; margin-left:12px; margin-top:5px; font-size:0.85em;";
+              divMese.textContent = `📁 ${NOMI_MESI[mm] || mm}`;
+              box.appendChild(divMese);
+
+              // Ordiniamo i giorni in ordine decrescente
+              const giorni = albero[yyyy][mm].sort((a, b) => {
+                const da = a.split('/')[0];
+                const db = b.split('/')[0];
+                return parseInt(db) - parseInt(da);
+              });
+
+              giorni.forEach(vFormatted => {
+                const lbl = document.createElement("label");
+                lbl.style.cssText = "margin-left:26px; font-size:0.85em; display:flex; align-items:center; gap:6px; cursor:pointer; color:#333; margin-top:2px;";
+                const chk = document.createElement("input");
+                chk.type = "checkbox";
+                chk.value = vFormatted;
+                chk.onchange = () => applicaFiltro();
+                
+                lbl.appendChild(chk);
+                lbl.appendChild(document.createTextNode(vFormatted));
+                box.appendChild(lbl);
+              });
+            });
+          });
+
+        } else {
+          // Gestione standard per gli altri filtri
+          valoriUnici.forEach(vFormatted => {
+            const lbl = document.createElement("label");
+            const chk = document.createElement("input");
+            chk.type = "checkbox";
+            chk.value = vFormatted;
+            chk.onchange = () => applicaFiltro();
+            
+            lbl.appendChild(chk);
+            lbl.appendChild(document.createTextNode(vFormatted));
+            box.appendChild(lbl);
+          });
+        }
 
         const l = document.createElement("label");
         l.className = "filtro";
