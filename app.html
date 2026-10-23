@@ -90,7 +90,7 @@
     /* Tabella Principale */
     #tabella-container table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; background: white; color: black; table-layout: auto; }
     #tabella-container th, #tabella-container td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-    #tabella-container th { background: #003366; color: white; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+    #tabella-container th { background: #003366; color: white; position: sticky; top: 0; z-index: 2; white-space: nowrap; user-select: none; }
     #tabella-container td { white-space: normal; }
     #tabella-container tr.highlight { background-color: #fdd !important; }
     
@@ -107,6 +107,12 @@
     .toolbar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
     .toolbar button { padding: 6px 12px; font-size: 0.9em; cursor: pointer; background: #0055aa; color: white; border: none; border-radius: 5px; font-weight: bold; }
     .toolbar button:hover { background: #004080; }
+
+    /* Animazione dello spinner di caricamento */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
 	
 /* Responsive Tabella Principale su Mobile */
 @media (max-width: 768px) {
@@ -185,24 +191,17 @@
 </head>
 <body>
 
-<!-- Loader / Avviso di caricamento in uscita -->
-<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(18, 30, 45, 0.9); z-index:9999; justify-content:center; align-items:center; flex-direction:column; color:white;">
-  <div style="border: 4px solid #1c2d42; border-top: 4px solid #00bfff; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
-  <div style="font-size: 1.1em; font-weight: bold; color: #00bfff;">Caricamento Contratti in corso...</div>
-</div>
-
-<style>
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-</style>
-
 <script>
     if (sessionStorage.getItem("isAuthorized") !== "true") {
         window.location.href = "index.html";
     }
 </script>
+
+<!-- Loader / Avviso di caricamento in uscita -->
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(18, 30, 45, 0.9); z-index:9999; justify-content:center; align-items:center; flex-direction:column; color:white;">
+  <div style="border: 4px solid #1c2d42; border-top: 4px solid #00bfff; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
+  <div style="font-size: 1.1em; font-weight: bold; color: #00bfff;">Caricamento Contratti in corso...</div>
+</div>
 
 <header>
   <div>
@@ -277,64 +276,9 @@
     let ipUtentePubblico = "In rilevamento...";
     let mostraColonneExtra = false;
 
-
-	// Variabili per la gestione dell'ordinamento
+    // Variabili per l'ordinamento dinamico delle colonne
     let campoOrdinamento = null;
     let ordineCrescente = true;
-
-    function ordinaColonna(campo) {
-      if (!campo) return;
-      
-      // Se clicchiamo sulla stessa colonna, invertiamo l'ordine; altrimenti impostiamo la nuova colonna in modo crescente
-      if (campoOrdinamento === campo) {
-        ordineCrescente = !ordineCrescente;
-      } else {
-        campoOrdinamento = campo;
-        ordineCrescente = true;
-      }
-
-      // Eseguiamo l'ordinamento sull'array corrente filtrato
-      datiCorrenti.sort((a, b) => {
-        const chiave = chiaveCampo(a, campo);
-        let valA = a[chiave] || "";
-        let valB = b[chiave] || "";
-
-        // Gestione specifica per date
-        if (campiDate.some(c => c.toLowerCase() === campo.toLowerCase()) || campo === "data_inserimento_ord") {
-          valA = convertiDataInTimestamp(valA);
-          valB = convertiDataInTimestamp(valB);
-        } 
-        // Gestione specifica per numeri e prezzi
-        else if (["giorni_giacenza", "prezzo_vendita_web", "listino_originale", "prezzo_versione", "prezzo_opt"].includes(campo.toLowerCase())) {
-          valA = parseFloat(String(valA).replace(/€|\s/g, "").replace(/\./g, "").replace(",", ".")) || 0;
-          valB = parseFloat(String(valB).replace(/€|\s/g, "").replace(/\./g, "").replace(",", ".")) || 0;
-        } 
-        // Gestione testuale standard case-insensitive
-        else {
-          valA = String(valA).toLowerCase();
-          valB = String(valB).toLowerCase();
-        }
-
-        if (valA < valB) return ordineCrescente ? -1 : 1;
-        if (valA > valB) return ordineCrescente ? 1 : -1;
-        return 0;
-      });
-
-      // Ridisegniamo la tabella con i dati ordinati
-      mostraTabella(datiCorrenti);
-    }
-
-    function convertiDataInTimestamp(str) {
-      if (!str) return 0;
-      str = String(str).trim();
-      if (str.includes("/")) {
-        const parti = str.split(" ")[0].split("/");
-        if (parti.length === 3) {
-          return new Date(`${parti[2]}-${parti[1]}-${parti[0]}`).getTime() || 0;
-        }
-      }
-      return new Date(str).getTime() || 0;
-    }
 
     // Recupero Ruolo e Utente dalla sessione
     const userRole = sessionStorage.getItem("userRole") || "agente";
@@ -390,79 +334,74 @@
       }
     }
 
-function apriPdfOttimizzato(urlOriginale) {
-  if (!urlOriginale) return;
+    // Apri PDF in modale interna e gestione download pulita
+    function apriPdfOttimizzato(urlOriginale) {
+      if (!urlOriginale) return;
 
-  // URL per la visualizzazione tramite Google Viewer
-  const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
+      const urlViewer = "https://docs.google.com/viewer?embedded=true&url=" + encodeURIComponent(urlOriginale);
 
-  let pdfModal = document.getElementById("pdfViewerModal");
-  if (!pdfModal) {
-    pdfModal = document.createElement("div");
-    pdfModal.id = "pdfViewerModal";
-    pdfModal.className = "modal-overlay";
-    pdfModal.innerHTML = `
-      <div class="modal-content" style="height: 90vh; max-height: 90vh; display: flex; flex-direction: column; padding: 15px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-          <h3 style="margin:0; font-size: 1.1em; color: #123e63;">📄 Dettagli Allestimento PDF</h3>
-          <div style="display: flex; gap: 8px;">
-            <button id="btnSwitchViewer" onclick="forzaAnteprimaNativa()" style="background: #1769aa; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85em;">🔄 Apri in modalità alternativa</button>
-            <button id="btnDownloadPdf" onclick="scaricaPdfSicuro()" style="background: #16803c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85em;">📥 Scarica / Salva</button>
-            <button onclick="chiudiPdfModale()" style="background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Chiudi ×</button>
+      let pdfModal = document.getElementById("pdfViewerModal");
+      if (!pdfModal) {
+        pdfModal = document.createElement("div");
+        pdfModal.id = "pdfViewerModal";
+        pdfModal.className = "modal-overlay";
+        pdfModal.innerHTML = `
+          <div class="modal-content" style="height: 90vh; max-height: 90vh; display: flex; flex-direction: column; padding: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+              <h3 style="margin:0; font-size: 1.1em; color: #123e63;">📄 Dettagli Allestimento PDF</h3>
+              <div style="display: flex; gap: 8px;">
+                <button id="btnSwitchViewer" onclick="forzaAnteprimaNativa()" style="background: #1769aa; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85em;">🔄 Apri in modalità alternativa</button>
+                <button id="btnDownloadPdf" onclick="scaricaPdfSicuro()" style="background: #16803c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85em;">📥 Scarica / Salva</button>
+                <button onclick="chiudiPdfModale()" style="background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Chiudi ×</button>
+              </div>
+            </div>
+            <div style="flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 6px; border: 1px solid #ccc;">
+              <iframe id="pdfIframe" style="width: 100%; height: 100%; border: none;" src="about:blank"></iframe>
+            </div>
           </div>
-        </div>
-        <div style="flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 6px; border: 1px solid #ccc;">
-          <iframe id="pdfIframe" style="width: 100%; height: 100%; border: none;" src="about:blank"></iframe>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(pdfModal);
-  }
+        `;
+        document.body.appendChild(pdfModal);
+      }
 
-  window._correntePdfUrl = urlOriginale;
-  const iframe = document.getElementById("pdfIframe");
-  
-  // Carichiamo l'anteprima tramite Google Viewer (mantiene il comportamento visivo che preferisci)
-  iframe.src = urlViewer;
-  pdfModal.style.display = "block";
-}
+      window._correntePdfUrl = urlOriginale;
+      const iframe = document.getElementById("pdfIframe");
+      iframe.src = urlViewer;
+      pdfModal.style.display = "block";
+    }
 
-// Funzione di soccorso se Google Viewer mostra errori/file strano
-function forzaAnteprimaNativa() {
-  const iframe = document.getElementById("pdfIframe");
-  if (iframe && window._correntePdfUrl) {
-    iframe.src = window._correntePdfUrl;
-  }
-}
-	  
-function logNavigazioneContratti(e) {
-  if (e) e.preventDefault();
+    function forzaAnteprimaNativa() {
+      const iframe = document.getElementById("pdfIframe");
+      if (iframe && window._correntePdfUrl) {
+        iframe.src = window._correntePdfUrl;
+      }
+    }
 
-  // Mostra subito l'avviso di caricamento
-  const overlay = document.getElementById("loadingOverlay");
-  if (overlay) overlay.style.display = "flex";
+    function logNavigazioneContratti(e) {
+      if (e) e.preventDefault();
 
-  window.onbeforeunload = null;
-  const utente = sessionStorage.getItem("currentUser") || "Utente";
-  const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+      const overlay = document.getElementById("loadingOverlay");
+      if (overlay) overlay.style.display = "flex";
 
-  if (logUrl) {
-    fetch(logUrl, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        utente: utente,
-        note: "Navigazione verso Contratti con veicoli in arrivo | IP: " + ipUtentePubblico,
-        dispositivo: navigator.userAgent
-      })
-    }).finally(() => {
-      window.location.href = "contratti.html";
-    });
-  } else {
-    window.location.href = "contratti.html";
-  }
-}
+      window.onbeforeunload = null;
+      const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
+
+      if (logUrl) {
+        fetch(logUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            utente: currentUser,
+            note: "Navigazione verso Contratti con veicoli in arrivo | IP: " + ipUtentePubblico,
+            dispositivo: navigator.userAgent
+          })
+        }).finally(() => {
+          window.location.href = "contratti.html";
+        });
+      } else {
+        window.location.href = "contratti.html";
+      }
+    }
 	  
     async function scaricaPdfSicuro() {
       const url = window._correntePdfUrl;
@@ -828,7 +767,7 @@ function logNavigazioneContratti(e) {
       modal.style.display = "block";
     }
 
-    // Creazione Sdoppiata dei Filtri (con data_inserimento_ord strutturata ad albero ESPANDIBILE)
+    // Creazione Sdoppiata dei Filtri
     function creaFiltri() {
       const divPrincipali = document.getElementById("parametri-principali");
       const divSecondari = document.getElementById("parametri-secondari");
@@ -836,15 +775,15 @@ function logNavigazioneContratti(e) {
       divSecondari.innerHTML = "";
       
       intestazione.forEach((col, i) => {
-		const nomeCol = col.toLowerCase();
+        const nomeCol = col.toLowerCase();
         const isDataInsOrd = (nomeCol === "data_inserimento_ord");
-		const isNotaPren = (nomeCol === "nota_pren");
+        const isNotaPren = (nomeCol === "nota_pren");
 
-		// 1. Se l'utente è "agente", nascondiamo totalmente il filtro nota_pren
-    	if (isNotaPren && userRole === "agente") {
-     	 return;
-   		}
-        
+        // Per l'agente nascondiamo totalmente il filtro nota_pren
+        if (isNotaPren && userRole === "agente") {
+          return;
+        }
+
         if (campiEsclusiFiltri.includes(col)) {
           if (!(isDataInsOrd && userRole === "admin")) return;
         }
@@ -867,7 +806,7 @@ function logNavigazioneContratti(e) {
         box.className = "filtro-box";
         box.setAttribute("data-col-index", i);
 
-        // Gestione espandibile ad albero per la data ordine
+        // Gestione espandibile ad albero per la data ordine (solo Admin)
         if (isDataInsOrd) {
           const albero = {};
           valoriUnici.forEach(vFormatted => {
@@ -892,7 +831,6 @@ function logNavigazioneContratti(e) {
 
           anni.forEach((yyyy, indexAnno) => {
             const detailsAnno = document.createElement("details");
-            // Apre di default solo l'anno più recente
             if (indexAnno === 0) detailsAnno.setAttribute("open", "true");
             detailsAnno.style.cssText = "margin-bottom: 4px;";
 
@@ -907,7 +845,6 @@ function logNavigazioneContratti(e) {
             const mesi = Object.keys(albero[yyyy]).sort((a, b) => b.localeCompare(a));
             mesi.forEach((mm, indexMese) => {
               const detailsMese = document.createElement("details");
-              // Apre di default il mese più recente del primo anno
               if (indexAnno === 0 && indexMese === 0) detailsMese.setAttribute("open", "true");
               detailsMese.style.cssText = "margin-bottom: 2px;";
 
@@ -947,7 +884,7 @@ function logNavigazioneContratti(e) {
           });
 
         } else {
-          // Filtri standard a casella
+          // Filtri standard
           valoriUnici.forEach(vFormatted => {
             const lbl = document.createElement("label");
             const chk = document.createElement("input");
@@ -972,6 +909,55 @@ function logNavigazioneContratti(e) {
           divSecondari.appendChild(l);
         }
       });
+    }
+
+    // Gestione ordinamento dinamico per colonna
+    function ordinaColonna(campo) {
+      if (!campo) return;
+      
+      if (campoOrdinamento === campo) {
+        ordineCrescente = !ordineCrescente;
+      } else {
+        campoOrdinamento = campo;
+        ordineCrescente = true;
+      }
+
+      datiCorrenti.sort((a, b) => {
+        const chiave = chiaveCampo(a, campo);
+        let valA = a[chiave] || "";
+        let valB = b[chiave] || "";
+
+        if (campiDate.some(c => c.toLowerCase() === campo.toLowerCase()) || campo === "data_inserimento_ord") {
+          valA = convertiDataInTimestamp(valA);
+          valB = convertiDataInTimestamp(valB);
+        } 
+        else if (["giorni_giacenza", "prezzo_vendita_web", "listino_originale", "prezzo_versione", "prezzo_opt"].includes(campo.toLowerCase())) {
+          valA = parseFloat(String(valA).replace(/€|\s/g, "").replace(/\./g, "").replace(",", ".")) || 0;
+          valB = parseFloat(String(valB).replace(/€|\s/g, "").replace(/\./g, "").replace(",", ".")) || 0;
+        } 
+        else {
+          valA = String(valA).toLowerCase();
+          valB = String(valB).toLowerCase();
+        }
+
+        if (valA < valB) return ordineCrescente ? -1 : 1;
+        if (valA > valB) return ordineCrescente ? 1 : -1;
+        return 0;
+      });
+
+      mostraTabella(datiCorrenti);
+    }
+
+    function convertiDataInTimestamp(str) {
+      if (!str) return 0;
+      str = String(str).trim();
+      if (str.includes("/")) {
+        const parti = str.split(" ")[0].split("/");
+        if (parti.length === 3) {
+          return new Date(`${parti[2]}-${parti[1]}-${parti[0]}`).getTime() || 0;
+        }
+      }
+      return new Date(str).getTime() || 0;
     }
 
     function mostraTabella(arr) {
@@ -1035,74 +1021,11 @@ function logNavigazioneContratti(e) {
       const t = document.createElement("table");
       const thead = document.createElement("thead");
       const trh = document.createElement("tr");
-function mostraTabella(arr) {
-      datiCorrenti = arr; 
-      let colonneTabella = [
-        { label: "id_veicolo", campo: "id_veicolo" },
-        { label: "descrizione", campo: "descrizione" },
-        { label: "des_colore", campo: "des_colore" },
-        { label: "VAN", campo: "VAN" },
-        { label: "Prenota via WhatsApp", whatsapp: true },
-        { label: "TELAIO", campo: "telaio" },
-        { label: "descri_status", campo: "descri_status" },
-        { label: "stato_avanz_ordine", campo: "stato_avanz_ordine" },
-        { label: "giorni_giacenza", campo: "giorni_giacenza" },
-        { label: "data_arrivo_prev", campo: "data_arrivo_prev" },
-        { label: "descr_passo", campo: "descr_passo" },
-        { label: "note", campo: "note" },
-        { label: "tipo_allestimento", campo: "tipo_allestimento" },
-        { label: "Dettagli allestimento", scheda: true },
-        { label: "prezzo_vendita_web", campo: "prezzo_vendita_web" },
-        { label: "prenotato_da", campo: "prenotato_da" },
-        { label: "scadenza_pren", campo: "scadenza_pren" },
-        { label: "nota_pren", campo: "nota_pren" }
-      ];
 
-      if (userRole === "agente") {
-        colonneTabella = colonneTabella.filter(col => col.campo !== "nota_pren");
-      }
-
-      if (mostraColonneExtra) {
-        colonneTabella.push(
-          { label: "Data Ins. Ordine", campo: "data_inserimento_ord" },
-          { label: "Listino Totale d'acquisto", campo: "listino_originale" },
-          { label: "Listino Base", campo: "prezzo_versione" },
-          { label: "Listino opt", campo: "prezzo_opt" }
-        );
-      }
-
-      const campiInGrassetto = new Set([
-        "descrizione", "descri_status", "stato_avanz_ordine",
-        "data_arrivo_prev", "tipo_allestimento", "prezzo_vendita_web",
-        "prenotato_da", "scadenza_pren", "nota_pren",
-        "listino_originale", "prezzo_versione", "prezzo_opt"
-      ]);
-
-      function formattaPrezzoEuro(valore) {
-        if (valore === null || valore === undefined || String(valore).trim() === "") return "";
-        if (typeof valore === "number") {
-          return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valore);
-        }
-        let testo = String(valore).trim().replace(/€|\s/g, "");
-        if (testo.includes(",")) {
-          testo = testo.replace(/\./g, "").replace(",", ".");
-        }
-        const numero = Number(testo);
-        if (!Number.isFinite(numero)) return String(valore);
-        return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numero);
-      }
-
-      const cont = document.getElementById("tabella-container");
-      const t = document.createElement("table");
-      const thead = document.createElement("thead");
-      const trh = document.createElement("tr");
-
-      // ---> SOSTITUISCI QUESTA PARTE <---
       colonneTabella.forEach(col => {
         const th = document.createElement("th");
         let testoLabel = col.label;
 
-        // Se la colonna ha un campo associato, la rendiamo cliccabile per l'ordinamento
         if (col.campo) {
           th.style.cursor = "pointer";
           th.title = "Clicca per ordinare";
@@ -1119,10 +1042,9 @@ function mostraTabella(arr) {
         th.textContent = testoLabel;
         trh.appendChild(th);
       });
- 
+
       thead.appendChild(trh);
       t.appendChild(thead);
-      
 
       const tbody = document.createElement("tbody");
       arr.forEach(r => {
