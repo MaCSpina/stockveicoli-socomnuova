@@ -8,7 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <title>Socom - Contratti in Arrivo</title>
   <style>
-    /* Stili generali */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #121e2d; color: white; }
     header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
     h1 { margin: 0; font-size: 1.8em; color: #00bfff; }
@@ -20,7 +19,6 @@
     .btn-nav:hover { background: #004080; }
     .btn-logout { background: #d32f2f; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold; }
 
-    /* Filtri a Checkbox */
     .filtri { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
     .filtro { display: flex; flex-direction: column; min-width: 180px; flex: 1; max-width: 300px; }
     .filtro-box {
@@ -38,7 +36,6 @@
     .filtro-box label { font-weight: normal; font-size: 0.9em; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #333; }
     .filtro-box input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; }
     
-    /* Input di Ricerca */
     .search-container { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .search-input {
       padding: 10px 14px;
@@ -53,13 +50,11 @@
     }
     .search-input:focus { outline: none; border-color: #00bfff; box-shadow: 0 0 8px rgba(0, 191, 255, 0.4); }
 
-    /* Tabella */
     #tabella-container table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.88em; background: white; color: black; table-layout: auto; }
     #tabella-container th, #tabella-container td { border: 1px solid #ccc; padding: 7px; text-align: left; }
     #tabella-container th { background: #003366; color: white; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
     #tabella-container td { white-space: normal; }
     
-    /* Evidenziazione Ritardi e Badge Anomalia */
     .ritardo-alto { background-color: #ffebee !important; color: #c62828; font-weight: bold; }
     .badge-anomalia { display: inline-block; margin-left: 6px; padding: 2px 6px; background: #d32f2f; color: #ffffff; font-size: 11px; border-radius: 4px; font-weight: bold; white-space: nowrap; }
     
@@ -69,10 +64,6 @@
     .badge { background: #d32f2f; padding: 4px 8px; border-radius: 12px; margin-right: 8px; display: inline-flex; align-items: center; color: #fff; font-weight: bold; }
     .badge button { border: none; background: none; margin-left: 6px; cursor: pointer; font-weight: bold; color: #fff; font-size: 14px; }
     .toolbar { margin-bottom: 15px; display: flex; gap: 10px; }
-
-    /* Stili Modale PDF / iOS Anti-White Screen */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; }
-    .modal-content { background: #fff; width: 92%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
 
     @media (max-width: 768px) {
       header { flex-direction: column; align-items: flex-start; }
@@ -107,7 +98,7 @@
     
     <div class="user-badge-container">
       <a href="app.html" class="btn-nav" onclick="logNavigazioneStock(event)">🚚 Torna allo Stock</a>
-      <div class="user-badge-text">👤 <span id="nomeUtenteLogged">Ospite</span></div>
+      <div class="user-badge-text">👤 <span id="nomeUtenteLogged">Ospite</span> (<span id="ruoloUtenteLabel"></span>)</div>
       <button class="btn-logout" onclick="logout()">Esci</button>
     </div>
   </header>
@@ -118,7 +109,6 @@
       <button class="btn-nav" onclick="caricaDatiContratti()">Aggiorna Dati</button>
     </div>
 
-    <!-- Campo Ricerca Diretta -->
     <div class="search-container">
       <input 
         type="text" 
@@ -140,10 +130,11 @@
 
   <script>
     const GIST_ID = "3f99e0346bab2fe686f1ee8572be63f7";
-    // URL pulito senza hash fisso, garantisce il caricamento dei dati correnti
-    const URL_GIST_CONTRATTI = "https://gist.githubusercontent.com/MaCSpina/3f99e0346bab2fe686f1ee8572be63f7/raw/veicoli_contratti_in_arrivo.txt";
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
+
+    const userRole = sessionStorage.getItem("userRole") || "agente";
+    const currentUser = sessionStorage.getItem("currentUser") || "Utente";
 
     const TIMEOUT_INATTIVITA_MS = 60 * 60 * 1000;
     let timerInattivita;
@@ -154,13 +145,12 @@
     }
 
     async function logoutPerInattivita() {
-      const utente = sessionStorage.getItem("currentUser") || "Utente";
       const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
       if (logUrl) {
         try {
           await fetch(logUrl, {
             method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ utente: utente, note: "Disconnessione automatica per inattività (Contratti) | IP: " + ipUtentePubblico, dispositivo: navigator.userAgent })
+            body: JSON.stringify({ utente: currentUser, note: "Disconnessione automatica per inattività (Contratti) | IP: " + ipUtentePubblico, dispositivo: navigator.userAgent })
           });
         } catch(e) {}
       }
@@ -177,19 +167,12 @@
       .then(res => res.json()).then(data => { ipUtentePubblico = data.ip; }).catch(() => {});
 
     async function inviaLogAttivita(testoNota) {
-      const utente = sessionStorage.getItem("currentUser") || "Utente";
       const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
       if (logUrl) {
         try {
           fetch(logUrl, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              utente: utente, 
-              note: testoNota + " | IP: " + ipUtentePubblico,
-              dispositivo: navigator.userAgent 
-            })
+            method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ utente: currentUser, note: testoNota + " | IP: " + ipUtentePubblico, dispositivo: navigator.userAgent })
           });
         } catch(e) {}
       }
@@ -198,26 +181,13 @@
     function logNavigazioneStock(e) {
       if (e) e.preventDefault();
       window.onbeforeunload = null;
-
-      const utente = sessionStorage.getItem("currentUser") || "Utente";
       const logUrl = URL_LOG_SCRIPT || sessionStorage.getItem("URL_LOG_SCRIPT");
-
       if (logUrl) {
         fetch(logUrl, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            utente: utente,
-            note: "Navigazione verso Stock veicoli | IP: " + ipUtentePubblico,
-            dispositivo: navigator.userAgent
-          })
-        }).finally(() => {
-          window.location.href = "app.html";
-        });
-      } else {
-        window.location.href = "app.html";
-      }
+          method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ utente: currentUser, note: "Navigazione verso Stock veicoli | IP: " + ipUtentePubblico, dispositivo: navigator.userAgent })
+        }).finally(() => { window.location.href = "app.html"; });
+      } else { window.location.href = "app.html"; }
     }
 
     const colonneVisibili = [
@@ -241,7 +211,7 @@
     const campiFiltro = ["agente", "anno", "tipo_contratto", "GG_DIFF", "tipo_veicolo", "Stato Primario"];
     const campiDate = ["data_contr", "prevista_consegna_contratto", "prevista_consegna"];
 
-    let intestazione = [], dati = [];
+    let intestazione = [], dati = [], datiFiltratiPerUtente = [];
 
     function pulisciTesto(str) { return str ? String(str).replace(/^"+|"+$/g, '').trim() : ""; }
 
@@ -250,9 +220,7 @@
       str = String(str).trim();
       if (str.includes("/")) {
         const parti = str.split(" ")[0].split("/");
-        if (parti.length === 3) {
-          return new Date(parseInt(parti[2], 10), parseInt(parti[1], 10) - 1, parseInt(parti[0], 10));
-        }
+        if (parti.length === 3) return new Date(parseInt(parti[2], 10), parseInt(parti[1], 10) - 1, parseInt(parti[0], 10));
       }
       const d = new Date(str);
       return isNaN(d) ? null : d;
@@ -270,46 +238,42 @@
       return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
     }
 
-    function aggiornaDataUltimoModificaGist() {
-      fetch(`https://api.github.com/gists/${GIST_ID}?nocache=` + Date.now())
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.updated_at) {
-            const dataUltimaModifica = new Date(data.updated_at);
-            const dataFormattata = dataUltimaModifica.toLocaleDateString("it-IT");
-            const oraFormattata = dataUltimaModifica.toLocaleTimeString("it-IT");
-            document.getElementById("ultimo-aggiornamento").textContent = 
-              `Ultimo aggiornamento dati Gist: ${dataFormattata} ore ${oraFormattata}`;
-          }
-        })
-        .catch(() => {
-          document.getElementById("ultimo-aggiornamento").textContent = 
-            "Ultimo caricamento: " + new Date().toLocaleTimeString("it-IT");
-        });
+    // Filtro intelligente per mostrare solo i contratti dell'agente loggato
+    function filtraPerAgenteLoggato(arrDati) {
+      if (userRole === "admin" || userRole === "supervisor") {
+        return arrDati; // Admin e Supervisor vedono tutto
+      }
+
+      const userLower = currentUser.toLowerCase().trim();
+      const cognomeUser = userLower.includes(".") ? userLower.split(".")[1] : userLower;
+
+      return arrDati.filter(row => {
+        const agenteRecord = String(row["agente"] || "").toLowerCase();
+        if (!agenteRecord) return false;
+        return agenteRecord.includes(userLower) || (cognomeUser && agenteRecord.includes(cognomeUser));
+      });
     }
 
-function caricaDatiContratti() {
-      // Usiamo l'API ufficiale di GitHub per i Gist, che non ha problemi di cache CDN ed è sempre aggiornata al secondo
+    function caricaDatiContratti() {
       fetch(`https://api.github.com/gists/${GIST_ID}?nocache=` + Date.now())
         .then(r => r.json())
         .then(gistData => {
-          // Estrae il contenuto del file dei contratti direttamente dal JSON dell'API
           const fileChiave = Object.keys(gistData.files).find(f => f.includes("contratti") || f.endsWith(".txt"));
           const testo = fileChiave ? gistData.files[fileChiave].content : "";
 
           if (!testo) {
-            mostraMessaggio("Errore: Impossibile leggere il contenuto del file Gist.");
+            document.getElementById("msg").textContent = "Errore: Impossibile leggere il file Gist.";
             return;
           }
 
           const parsed = Papa.parse(testo.trim(), { delimiter: ";", header: true, skipEmptyLines: true });
           intestazione = parsed.meta.fields ? parsed.meta.fields.map(pulisciTesto) : [];
-          dati = parsed.data.map(row => {
+          
+          let datiGrezzi = parsed.data.map(row => {
             const newObj = {};
             Object.keys(row).forEach(k => {
               const valPulito = pulisciTesto(row[k]);
               const keyPulita = pulisciTesto(k);
-              
               if (keyPulita === "GG_DIFF") {
                 const numVal = parseFloat(valPulito.replace(',', '.'));
                 newObj[keyPulita] = !isNaN(numVal) ? String(Math.round(numVal)) : valPulito;
@@ -320,20 +284,21 @@ function caricaDatiContratti() {
             return newObj;
           });
 
-          // Aggiorna anche la data dell'ultimo aggiornamento sfruttando lo stesso oggetto API ricevuto
+          // Applica restrizione in base al ruolo
+          dati = filtraPerAgenteLoggato(datiGrezzi);
+
           if (gistData && gistData.updated_at) {
-            const dataUltimaModifica = new Date(gistData.updated_at);
-            document.getElementById("ultimo-aggiornamento").textContent = 
-              `Ultimo aggiornamento dati Gist: ${dataUltimaModifica.toLocaleDateString("it-IT")} ore ${dataUltimaModifica.toLocaleTimeString("it-IT")}`;
+            const dt = new Date(gistData.updated_at);
+            document.getElementById("ultimo-aggiornamento").textContent = `Ultimo aggiornamento dati Gist: ${dt.toLocaleDateString("it-IT")} ore ${dt.toLocaleTimeString("it-IT")}`;
           }
 
           creaFiltri();
           mostraTabella(dati);
-          mostraMessaggio(`${dati.length} contratti trovati`);
+          document.getElementById("msg").textContent = `${dati.length} contratti trovati`;
         })
         .catch(err => {
-          console.error("Errore caricamento via API Gist:", err);
-          mostraMessaggio("Errore di caricamento dati.");
+          console.error("Errore caricamento contratti:", err);
+          document.getElementById("msg").textContent = "Errore di caricamento dati contratti.";
         });
     }
 
@@ -342,13 +307,12 @@ function caricaDatiContratti() {
       div.innerHTML = "";
       
       campiFiltro.forEach(col => {
-        let valoriUnici = [...new Set(dati.map(r => r[col]).filter(Boolean))];
+        // Se l'utente è un agente, non mostriamo il filtro per la colonna "agente"
+        if (userRole === "agente" && col === "agente") return;
 
-        if (col === "GG_DIFF") {
-          valoriUnici.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-        } else {
-          valoriUnici.sort();
-        }
+        let valoriUnici = [...new Set(dati.map(r => r[col]).filter(Boolean))];
+        if (col === "GG_DIFF") valoriUnici.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        else valoriUnici.sort();
 
         const box = document.createElement("div");
         box.className = "filtro-box";
@@ -393,7 +357,6 @@ function caricaDatiContratti() {
 
       arr.forEach(r => {
         const tr = document.createElement("tr");
-        
         const dataPrevistaObj = parseDataOggetto(r["prevista_consegna"]);
         const dataPrevistaContrattoObj = parseDataOggetto(r["prevista_consegna_contratto"]);
 
@@ -408,10 +371,7 @@ function caricaDatiContratti() {
           td.setAttribute("data-label", col.label);
           let v = r[col.campo] || "—";
 
-          if (campiDate.includes(col.campo)) {
-            v = formattaData(v);
-          }
-
+          if (campiDate.includes(col.campo)) v = formattaData(v);
           td.textContent = v;
 
           if (col.campo === "prevista_consegna" && eAnomalaOgniGiorno) {
@@ -420,7 +380,6 @@ function caricaDatiContratti() {
             badgeAnomalia.textContent = "⚠️ data prevista consegna anomala";
             td.appendChild(badgeAnomalia);
           }
-
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -429,8 +388,6 @@ function caricaDatiContratti() {
       cont.innerHTML = "";
       cont.appendChild(t);
     }
-
-    function mostraMessaggio(txt) { document.getElementById("msg").textContent = txt; }
 
     function aggiornaOpzioniFiltri() {
       const boxes = Array.from(document.querySelectorAll(".filtro-box"));
@@ -443,12 +400,8 @@ function caricaDatiContratti() {
         boxes.forEach(altroBox => {
           if (altroBox === box) return;
           const colAltro = altroBox.getAttribute("data-col-name");
-          const valoriAltro = Array.from(altroBox.querySelectorAll("input[type='checkbox']"))
-                                   .filter(c => c.checked)
-                                   .map(c => c.value);
-          if (valoriAltro.length) {
-            compatibili = compatibili.filter(r => valoriAltro.includes(r[colAltro]));
-          }
+          const valoriAltro = Array.from(altroBox.querySelectorAll("input[type='checkbox']")).filter(c => c.checked).map(c => c.value);
+          if (valoriAltro.length) compatibili = compatibili.filter(r => valoriAltro.includes(r[colAltro]));
         });
 
         const valoriDisponibili = new Set(compatibili.map(r => r[col]).filter(v => v !== undefined && v !== null && String(v) !== ""));
@@ -457,11 +410,8 @@ function caricaDatiContratti() {
         checkboxes.forEach(chk => {
           const val = chk.value;
           const lbl = chk.parentElement;
-          if (valoriDisponibili.has(val)) {
-            lbl.style.display = "flex";
-          } else {
-            lbl.style.display = "none";
-          }
+          if (valoriDisponibili.has(val)) lbl.style.display = "flex";
+          else lbl.style.display = "none";
         });
       });
     }
@@ -474,10 +424,8 @@ function caricaDatiContratti() {
 
       const testoRicerca = document.getElementById("input-ricerca-diretta")?.value.trim().toLowerCase() || "";
       if (testoRicerca !== "") {
-        arr = arr.filter(r => {
-          return Object.values(r).some(val => String(val).toLowerCase().includes(testoRicerca));
-        });
-        descrizioniFiltri.push(`Ricerca contratti: "${testoRicerca}"`);
+        arr = arr.filter(r => Object.values(r).some(val => String(val).toLowerCase().includes(testoRicerca)));
+        descrizioniFiltri.push(`Ricerca: "${testoRicerca}"`);
 
         const badgeRicerca = document.createElement("span");
         badgeRicerca.className = "badge";
@@ -510,30 +458,22 @@ function caricaDatiContratti() {
         }
       });
 
-      if (descrizioniFiltri.length > 0) {
-        inviaLogAttivita("Filtro Contratti applicato: " + descrizioniFiltri.join(" | "));
-      } else {
-        inviaLogAttivita("Filtro Contratti applicato: (Nessun filtro selezionato - Mostra tutti)");
-      }
+      if (descrizioniFiltri.length > 0) inviaLogAttivita("Filtro Contratti: " + descrizioniFiltri.join(" | "));
+      else inviaLogAttivita("Filtro Contratti applicato: (Tutti)");
 
       aggiornaOpzioniFiltri();
       mostraTabella(arr);
-      mostraMessaggio(`${arr.length} contratti trovati`);
+      document.getElementById("msg").textContent = `${arr.length} contratti trovati`;
     }
 
     function resettaFiltro() {
       document.getElementById("input-ricerca-diretta").value = "";
-      document.querySelectorAll(".filtro-box input[type='checkbox']").forEach(chk => {
-        chk.checked = false;
-        chk.parentElement.style.display = "flex";
-      });
+      document.querySelectorAll(".filtro-box input[type='checkbox']").forEach(chk => { chk.checked = false; chk.parentElement.style.display = "flex"; });
       document.getElementById("filtri-attivi").innerHTML = "";
-      
-      inviaLogAttivita("Reset filtri Contratti effettuato");
-
+      inviaLogAttivita("Reset filtri Contratti");
       aggiornaOpzioniFiltri();
       mostraTabella(dati);
-      mostraMessaggio(`${dati.length} contratti trovati`);
+      document.getElementById("msg").textContent = `${dati.length} contratti trovati`;
     }
 
     function logout() {
@@ -542,7 +482,8 @@ function caricaDatiContratti() {
     }
 
     window.onload = () => {
-      document.getElementById("nomeUtenteLogged").textContent = sessionStorage.getItem("currentUser") || "Utente";
+      document.getElementById("nomeUtenteLogged").textContent = currentUser;
+      document.getElementById("ruoloUtenteLabel").textContent = userRole.toUpperCase();
       URL_LOG_SCRIPT = sessionStorage.getItem("URL_LOG_SCRIPT") || "";
       caricaDatiContratti();
       resetTimerInattivita();
