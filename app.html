@@ -45,7 +45,7 @@
       background: #f8f8f8;
       border: 1px solid #ccc;
       border-radius: 6px;
-      max-height: 150px;
+      max-height: 180px;
       overflow-y: auto;
       padding: 8px 10px;
       color: #333;
@@ -116,7 +116,7 @@
   .btn-contratti-nav { width: 100%; justify-content: center; padding: 10px 0; box-sizing: border-box; }
   .filtri { flex-direction: column; }
   .filtro { max-width: 100%; width: 100%; }
-  .filtro-box { max-height: 120px; }
+  .filtro-box { max-height: 150px; }
   .search-input { max-width: 100%; }
   
   #tabella-container table, #tabella-container thead, #tabella-container tbody, #tabella-container th, #tabella-container td, #tabella-container tr { display: block; }
@@ -152,7 +152,6 @@
 .modal-content li span { width: 60%; text-align: left; color: #555; }
 .modal-content h3 { margin-top: 20px; font-size: 1.3em; color: #444; border-top: 1px solid #ccc; padding-top: 10px; }
 
-/* Contenitore con scorrimento orizzontale per la Tabella di Riepilogo */
 .table-responsive-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -741,7 +740,7 @@
       modal.style.display = "block";
     }
 
-    // Creazione Sdoppiata dei Filtri (con data_inserimento_ord raggruppata Anno -> Mese -> Giorno a scalare per admin)
+    // Creazione Sdoppiata dei Filtri (con data_inserimento_ord strutturata ad albero ESPANDIBILE)
     function creaFiltri() {
       const divPrincipali = document.getElementById("parametri-principali");
       const divSecondari = document.getElementById("parametri-secondari");
@@ -773,7 +772,7 @@
         box.className = "filtro-box";
         box.setAttribute("data-col-index", i);
 
-        // Se è data_inserimento_ord, organizziamo a scalare: Anno -> Mese -> Giorno
+        // Gestione espandibile ad albero per la data ordine
         if (isDataInsOrd) {
           const albero = {};
           valoriUnici.forEach(vFormatted => {
@@ -789,7 +788,6 @@
             }
           });
 
-          // Ordiniamo gli anni in ordine decrescente (più recente in alto)
           const anni = Object.keys(albero).sort((a, b) => b.localeCompare(a));
           const NOMI_MESI = {
             "01": "Gennaio", "02": "Febbraio", "03": "Marzo", "04": "Aprile",
@@ -797,20 +795,35 @@
             "09": "Settembre", "10": "Ottobre", "11": "Novembre", "12": "Dicembre"
           };
 
-          anni.forEach(yyyy => {
-            const divAnno = document.createElement("div");
-            divAnno.style.cssText = "font-weight:bold; color:#0284c7; margin-top:6px; font-size:0.9em; border-bottom:1px solid #e2e8f0; padding-bottom:2px;";
-            divAnno.textContent = `📅 Anno ${yyyy}`;
-            box.appendChild(divAnno);
+          anni.forEach((yyyy, indexAnno) => {
+            const detailsAnno = document.createElement("details");
+            // Apre di default solo l'anno più recente
+            if (indexAnno === 0) detailsAnno.setAttribute("open", "true");
+            detailsAnno.style.cssText = "margin-bottom: 4px;";
+
+            const summaryAnno = document.createElement("summary");
+            summaryAnno.style.cssText = "font-weight: bold; color: #0284c7; cursor: pointer; padding: 3px 0; font-size: 0.9em; user-select: none;";
+            summaryAnno.textContent = `📅 Anno ${yyyy}`;
+            detailsAnno.appendChild(summaryAnno);
+
+            const containerMesi = document.createElement("div");
+            containerMesi.style.cssText = "padding-left: 10px; margin-top: 2px; display: flex; flex-direction: column; gap: 3px;";
 
             const mesi = Object.keys(albero[yyyy]).sort((a, b) => b.localeCompare(a));
-            mesi.forEach(mm => {
-              const divMese = document.createElement("div");
-              divMese.style.cssText = "font-weight:bold; color:#475569; margin-left:12px; margin-top:5px; font-size:0.85em;";
-              divMese.textContent = `📁 ${NOMI_MESI[mm] || mm}`;
-              box.appendChild(divMese);
+            mesi.forEach((mm, indexMese) => {
+              const detailsMese = document.createElement("details");
+              // Apre di default il mese più recente del primo anno
+              if (indexAnno === 0 && indexMese === 0) detailsMese.setAttribute("open", "true");
+              detailsMese.style.cssText = "margin-bottom: 2px;";
 
-              // Ordiniamo i giorni in ordine decrescente
+              const summaryMese = document.createElement("summary");
+              summaryMese.style.cssText = "font-weight: bold; color: #475569; cursor: pointer; padding: 2px 0; font-size: 0.85em; user-select: none;";
+              summaryMese.textContent = `📁 ${NOMI_MESI[mm] || mm}`;
+              detailsMese.appendChild(summaryMese);
+
+              const containerGiorni = document.createElement("div");
+              containerGiorni.style.cssText = "padding-left: 15px; margin-top: 2px; display: flex; flex-direction: column; gap: 2px;";
+
               const giorni = albero[yyyy][mm].sort((a, b) => {
                 const da = a.split('/')[0];
                 const db = b.split('/')[0];
@@ -819,7 +832,7 @@
 
               giorni.forEach(vFormatted => {
                 const lbl = document.createElement("label");
-                lbl.style.cssText = "margin-left:26px; font-size:0.85em; display:flex; align-items:center; gap:6px; cursor:pointer; color:#333; margin-top:2px;";
+                lbl.style.cssText = "font-size: 0.85em; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #333;";
                 const chk = document.createElement("input");
                 chk.type = "checkbox";
                 chk.value = vFormatted;
@@ -827,13 +840,19 @@
                 
                 lbl.appendChild(chk);
                 lbl.appendChild(document.createTextNode(vFormatted));
-                box.appendChild(lbl);
+                containerGiorni.appendChild(lbl);
               });
+
+              detailsMese.appendChild(containerGiorni);
+              containerMesi.appendChild(detailsMese);
             });
+
+            detailsAnno.appendChild(containerMesi);
+            box.appendChild(detailsAnno);
           });
 
         } else {
-          // Gestione standard per gli altri filtri
+          // Filtri standard a casella
           valoriUnici.forEach(vFormatted => {
             const lbl = document.createElement("label");
             const chk = document.createElement("input");
