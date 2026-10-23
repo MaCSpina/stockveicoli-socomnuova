@@ -294,6 +294,7 @@
     let URL_LOG_SCRIPT = "";
     let ipUtentePubblico = "In rilevamento...";
     let mostraColonneExtra = false;
+    let filtriSecondariCreati = false;
 
     // Variabili per l'ordinamento dinamico delle colonne
     let campoOrdinamento = null;
@@ -371,10 +372,16 @@
       mostraTabella(datiCorrenti);
     }
 
-    // Toggle per mostrare/nascondere la sezione filtri secondari
+    // Toggle per mostrare/nascondere i filtri secondari (creazione Lazy per massima velocità)
     function toggleFiltriSecondari() {
       const box = document.getElementById("box-secondari");
       const btn = document.getElementById("btn-toggle-secondari");
+      
+      if (!filtriSecondariCreati) {
+        creaFiltriSecondari();
+        filtriSecondariCreati = true;
+      }
+
       if (box.style.display === "none") {
         box.style.display = "block";
         btn.innerHTML = "🔼 Nascondi Filtri Secondari";
@@ -608,10 +615,14 @@
           let ultimo = dati.find(r => r[chiaveCampo(r, "aggiornamento_stock")])?.[chiaveCampo(dati[0], "aggiornamento_stock")] || "";
           if (ultimo) document.getElementById("ultimo-aggiornamento").textContent = "Ultimo aggiornamento: " + ultimo;
 
-          creaFiltri();
           datiCorrenti = [...dati];
-          mostraTabella(datiCorrenti);
-          mostraMessaggio(`${datiCorrenti.length} record trovati`);
+          
+          // Rendering progressivo ad alta velocità per mobile
+          requestAnimationFrame(() => {
+            creaFiltriPrincipali();
+            mostraTabella(datiCorrenti);
+            mostraMessaggio(`${datiCorrenti.length} record trovati`);
+          });
         });
     }
 	
@@ -818,11 +829,55 @@
       modal.style.display = "block";
     }
 
-    // Creazione Sdoppiata dei Filtri
-    function creaFiltri() {
+    // Creazione veloce dei soli Filtri Principali all'avvio
+    function creaFiltriPrincipali() {
       const divPrincipali = document.getElementById("parametri-principali");
-      const divSecondari = document.getElementById("parametri-secondari");
       divPrincipali.innerHTML = "";
+      
+      intestazione.forEach((col, i) => {
+        if (!campiPrincipali.includes(col)) return;
+
+        let valoriUniciOriginali = [...new Set(dati.map(r => r[col]).filter(Boolean))];
+        let mapValori = new Map();
+        
+        valoriUniciOriginali.forEach(v => {
+          let valFormattato = campiDate.includes(col.toLowerCase()) ? formattaData(v) : v;
+          if (valFormattato) {
+            if (!mapValori.has(valFormattato)) mapValori.set(valFormattato, []);
+            mapValori.get(valFormattato).push(v);
+          }
+        });
+
+        const valoriUnici = Array.from(mapValori.keys()).sort();
+        if (valoriUnici.length === 0) return;
+
+        const box = document.createElement("div");
+        box.className = "filtro-box";
+        box.setAttribute("data-col-index", i);
+
+        valoriUnici.forEach(vFormatted => {
+          const lbl = document.createElement("label");
+          const chk = document.createElement("input");
+          chk.type = "checkbox";
+          chk.value = vFormatted;
+          chk.onchange = () => applicaFiltro();
+          
+          lbl.appendChild(chk);
+          lbl.appendChild(document.createTextNode(vFormatted));
+          box.appendChild(lbl);
+        });
+
+        const l = document.createElement("label");
+        l.className = "filtro";
+        l.innerHTML = `<strong>${col}</strong>`;
+        l.appendChild(box);
+        divPrincipali.appendChild(l);
+      });
+    }
+
+    // Creazione ritardata (Lazy) dei Filtri Secondari
+    function creaFiltriSecondari() {
+      const divSecondari = document.getElementById("parametri-secondari");
       divSecondari.innerHTML = "";
       
       intestazione.forEach((col, i) => {
@@ -830,10 +885,8 @@
         const isDataInsOrd = (nomeCol === "data_inserimento_ord");
         const isNotaPren = (nomeCol === "nota_pren");
 
-        // Per l'agente nascondiamo totalmente il filtro nota_pren
-        if (isNotaPren && userRole === "agente") {
-          return;
-        }
+        if (campiPrincipali.includes(col)) return;
+        if (isNotaPren && userRole === "agente") return;
 
         if (campiEsclusiFiltri.includes(col)) {
           if (!(isDataInsOrd && userRole === "admin")) return;
@@ -857,16 +910,12 @@
         box.className = "filtro-box";
         box.setAttribute("data-col-index", i);
 
-        // Gestione espandibile ad albero per la data ordine (solo Admin)
         if (isDataInsOrd) {
           const albero = {};
           valoriUnici.forEach(vFormatted => {
             const parti = vFormatted.split('/');
             if (parti.length === 3) {
-              const dd = parti[0];
-              const mm = parti[1];
-              const yyyy = parti[2];
-              
+              const dd = parti[0], mm = parti[1], yyyy = parti[2];
               if (!albero[yyyy]) albero[yyyy] = {};
               if (!albero[yyyy][mm]) albero[yyyy][mm] = [];
               albero[yyyy][mm].push(vFormatted);
@@ -907,11 +956,7 @@
               const containerGiorni = document.createElement("div");
               containerGiorni.style.cssText = "padding-left: 15px; margin-top: 2px; display: flex; flex-direction: column; gap: 2px;";
 
-              const giorni = albero[yyyy][mm].sort((a, b) => {
-                const da = a.split('/')[0];
-                const db = b.split('/')[0];
-                return parseInt(db) - parseInt(da);
-              });
+              const giorni = albero[yyyy][mm].sort((a, b) => parseInt(b.split('/')[0]) - parseInt(a.split('/')[0]));
 
               giorni.forEach(vFormatted => {
                 const lbl = document.createElement("label");
@@ -935,7 +980,6 @@
           });
 
         } else {
-          // Filtri standard
           valoriUnici.forEach(vFormatted => {
             const lbl = document.createElement("label");
             const chk = document.createElement("input");
@@ -953,16 +997,11 @@
         l.className = "filtro";
         l.innerHTML = `<strong>${col}</strong>`;
         l.appendChild(box);
-
-        if (campiPrincipali.includes(col)) {
-          divPrincipali.appendChild(l);
-        } else {
-          divSecondari.appendChild(l);
-        }
+        divSecondari.appendChild(l);
       });
     }
 
-    // Gestione ordinamento dinamico per colonna (condiviso con select e header table)
+    // Gestione ordinamento dinamico per colonna
     function ordinaColonna(campo) {
       if (!campo) return;
       
@@ -973,7 +1012,6 @@
         ordineCrescente = true;
       }
 
-      // Sincronizza il menu a tendina mobile/desktop se attivo
       const select = document.getElementById("selectOrdinamento");
       if (select) select.value = campo;
 
@@ -1142,7 +1180,7 @@
             tdInput.className = "row-checkbox";
             tdInput.value = vanVal;
             tdInput.style.cssText = "cursor: pointer; width: 16px; height: 16px;";
-            tdInput.onclick = (ev) => ev.stopPropagation(); // Evita l'apertura della modale del dettaglio
+            tdInput.onclick = (ev) => ev.stopPropagation();
             td.appendChild(tdInput);
           } else if (col.whatsapp) {
             const van = String(r[chiaveCampo(r, "VAN")] || "").trim();
