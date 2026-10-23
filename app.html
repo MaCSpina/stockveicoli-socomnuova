@@ -242,6 +242,22 @@
       >
     </div>
 
+    <!-- Barra di Ordinamento Pratica per Mobile e Desktop -->
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; background: #1c2d42; padding: 10px 14px; border-radius: 8px; border: 1px solid #0055aa;">
+      <span style="font-size: 0.9em; font-weight: bold; color: #00e5ff;">🔄 Ordina tabella per:</span>
+      <select id="selectOrdinamento" onchange="applicaOrdinamentoSelect(this.value)" style="padding: 7px 10px; border-radius: 5px; border: 1px solid #0055aa; background: #fff; color: #333; font-size: 0.9em; flex: 1; min-width: 170px; max-width: 250px;">
+        <option value="">(Predefinito / ID Veicolo)</option>
+        <option value="id_veicolo">ID Veicolo</option>
+        <option value="descrizione">Descrizione</option>
+        <option value="VAN">VAN</option>
+        <option value="giorni_giacenza">Giorni Giacenza</option>
+        <option value="data_arrivo_prev">Data Arrivo Prevista</option>
+        <option value="prezzo_vendita_web">Prezzo Vendita Web</option>
+        <option value="data_inserimento_ord">Data Ins. Ordine</option>
+      </select>
+      <button onclick="inviaInversioneOrdine()" style="padding: 7px 12px; background: #0055aa; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.88em;" title="Inverti ordine (Crescente/Decrescente)">↕ Inverti</button>
+    </div>
+
     <!-- Record trovati e pulsanti azioni sopra tabella -->
     <div class="status-bar">
       <div id="msg"></div>
@@ -945,7 +961,7 @@
       });
     }
 
-    // Gestione ordinamento dinamico per colonna
+    // Gestione ordinamento dinamico per colonna (condiviso con select e header table)
     function ordinaColonna(campo) {
       if (!campo) return;
       
@@ -955,6 +971,10 @@
         campoOrdinamento = campo;
         ordineCrescente = true;
       }
+
+      // Sincronizza il menu a tendina mobile/desktop se attivo
+      const select = document.getElementById("selectOrdinamento");
+      if (select) select.value = campo;
 
       datiCorrenti.sort((a, b) => {
         const chiave = chiaveCampo(a, campo);
@@ -980,6 +1000,25 @@
       });
 
       mostraTabella(datiCorrenti);
+    }
+
+    function applicaOrdinamentoSelect(campo) {
+      if (!campo) {
+        campoOrdinamento = null;
+        mostraTabella(datiCorrenti);
+        return;
+      }
+      ordinaColonna(campo);
+    }
+
+    function inviaInversioneOrdine() {
+      const select = document.getElementById("selectOrdinamento");
+      let campo = select.value;
+      if (!campo) {
+        campo = "id_veicolo";
+        select.value = campo;
+      }
+      ordinaColonna(campo);
     }
 
     function convertiDataInTimestamp(str) {
