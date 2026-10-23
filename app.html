@@ -591,11 +591,9 @@
 
     async function avviaConfigurazione() {
         try {
-            // Visualizzazione utente e ruolo nell'header
             document.getElementById("nomeUtenteLogged").textContent = currentUser;
             document.getElementById("ruoloUtenteLabel").textContent = userRole.toUpperCase();
 
-            // PROFILAZIONE RUOLO AGENTE: Nasconde il pulsante listini
             if (userRole === "agente") {
                 const btnExtra = document.getElementById("btnExtraCols");
                 if (btnExtra) btnExtra.style.display = "none";
@@ -743,7 +741,7 @@
       modal.style.display = "block";
     }
 
-    // Creazione Sdoppiata dei Filtri tra Principali e Secondari
+    // Creazione Sdoppiata dei Filtri tra Principali e Secondari (con data_inserimento_ord visibile solo per admin)
     function creaFiltri() {
       const divPrincipali = document.getElementById("parametri-principali");
       const divSecondari = document.getElementById("parametri-secondari");
@@ -751,24 +749,41 @@
       divSecondari.innerHTML = "";
       
       intestazione.forEach((col, i) => {
-        if (campiEsclusiFiltri.includes(col)) return;
+        const isDataInsOrd = (col.toLowerCase() === "data_inserimento_ord");
+        
+        // Se il campo è escluso, saltiamo a meno che non sia data_inserimento_ord e l'utente sia admin
+        if (campiEsclusiFiltri.includes(col)) {
+          if (!(isDataInsOrd && userRole === "admin")) return;
+        }
 
-        const valoriUnici = [...new Set(dati.map(r => r[col]).filter(Boolean))].sort();
+        // Raccoglie i valori formattati se è una data
+        let valoriUniciOriginali = [...new Set(dati.map(r => r[col]).filter(Boolean))];
+        let mapValori = new Map();
+        
+        valoriUniciOriginali.forEach(v => {
+          let valFormattato = campiDate.includes(col.toLowerCase()) ? formattaData(v) : v;
+          if (valFormattato) {
+            if (!mapValori.has(valFormattato)) mapValori.set(valFormattato, []);
+            mapValori.get(valFormattato).push(v);
+          }
+        });
+
+        const valoriUnici = Array.from(mapValori.keys()).sort();
         if (valoriUnici.length === 0) return;
 
         const box = document.createElement("div");
         box.className = "filtro-box";
         box.setAttribute("data-col-index", i);
 
-        valoriUnici.forEach(v => {
+        valoriUnici.forEach(vFormatted => {
           const lbl = document.createElement("label");
           const chk = document.createElement("input");
           chk.type = "checkbox";
-          chk.value = v;
+          chk.value = vFormatted;
           chk.onchange = () => applicaFiltro();
           
           lbl.appendChild(chk);
-          lbl.appendChild(document.createTextNode(v));
+          lbl.appendChild(document.createTextNode(vFormatted));
           box.appendChild(lbl);
         });
 
@@ -808,7 +823,6 @@
         { label: "nota_pren", campo: "nota_pren" }
       ];
 
-      // PROFILAZIONE RUOLO AGENTE: Nasconde la colonna nota_pren
       if (userRole === "agente") {
         colonneTabella = colonneTabella.filter(col => col.campo !== "nota_pren");
       }
@@ -916,7 +930,6 @@
             td.textContent = v;
             if (campiInGrassetto.has(col.campo.toLowerCase())) td.style.fontWeight = "bold";
 
-            // Gestione dei badge visivi nella colonna Descrizione (MY e Pronta Consegna)
             if (col.campo.toLowerCase() === "descrizione") {
               const modelYearTrovato = estraiModelYear(v);
               if (modelYearTrovato) {
@@ -966,11 +979,20 @@
                                    .filter(c => c.checked)
                                    .map(c => c.value);
           if (valoriAltro.length) {
-            compatibili = compatibili.filter(r => valoriAltro.includes(r[colAltro]));
+            compatibili = compatibili.filter(r => {
+              let vAltro = r[colAltro];
+              if (campiDate.includes(colAltro.toLowerCase())) vAltro = formattaData(vAltro);
+              return valoriAltro.includes(vAltro);
+            });
           }
         });
 
-        const valoriDisponibili = new Set(compatibili.map(r => r[col]).filter(v => v !== undefined && v !== null && String(v) !== ""));
+        const valoriDisponibili = new Set(compatibili.map(r => {
+          let v = r[col];
+          if (campiDate.includes(col.toLowerCase())) v = formattaData(v);
+          return v;
+        }).filter(v => v !== undefined && v !== null && String(v) !== ""));
+        
         selezionati.forEach(v => valoriDisponibili.add(v));
         
         checkboxes.forEach(chk => {
@@ -1026,7 +1048,13 @@
         const selvals = Array.from(box.querySelectorAll("input[type='checkbox']:checked")).map(c => c.value);
         
         if (selvals.length > 0) {
-          arr = arr.filter(r => selvals.includes(r[col]));
+          arr = arr.filter(r => {
+            let valR = r[col];
+            if (campiDate.includes(col.toLowerCase())) {
+              valR = formattaData(valR);
+            }
+            return selvals.includes(valR);
+          });
           descrizioniFiltri.push(`${col}: [${selvals.join(", ")}]`);
 
           const badge = document.createElement("span");
