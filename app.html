@@ -246,7 +246,6 @@
     <div class="toolbar">
       <button onclick="resettaFiltro()">Reset Filtro</button>
       <button onclick="caricaDati()">Aggiorna</button>
-      <button onclick="toggleColonneExtra()" id="btnExtraCols" style="background: #1769aa;">📈 Mostra e Nascondi Listini e data ordine</button>
     </div>
 
     <!-- Campo Ricerca Diretta (VAN / Telaio / Testo) -->
@@ -258,6 +257,32 @@
         placeholder="🔍 Cerca VAN, Telaio o Descrizione..." 
         oninput="applicaFiltro()"
       >
+    </div>
+
+    <div id="filtri-attivi"></div>
+
+    <!-- Sezione Filtri Principali -->
+    <div style="margin-bottom: 8px; font-weight: bold; color: #00bfff; font-size: 0.95em;">📌 Filtri Principali</div>
+    <div class="filtri" id="parametri-principali"></div>
+
+    <!-- Pulsante per Mostrare/Nascondere i Filtri Secondari -->
+    <div style="margin: 15px 0 12px 0;">
+      <button id="btn-toggle-secondari" onclick="toggleFiltriSecondari()" style="background: #1c2d42; color: #00e5ff; border: 1px solid #0055aa; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.88em; display: inline-flex; align-items: center; gap: 6px;">
+        🔽 Mostra Filtri Secondari
+      </button>
+    </div>
+
+    <!-- Sezione Filtri Secondari -->
+    <div id="box-secondari" style="display: none; background: #182535; padding: 12px; border-radius: 8px; border: 1px dashed #0055aa; margin-bottom: 15px;">
+      <div style="margin-bottom: 10px; font-weight: bold; color: #94a3b8; font-size: 0.9em;">⚙️ Filtri Secondari</div>
+      <div class="filtri" id="parametri-secondari"></div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- BLOCCO SPOSTATO SOTTO I FILTRI E SOPRA TABELLA -->
+    <!-- ========================================== -->
+    <div class="toolbar" style="margin-top: 20px;">
+      <button onclick="toggleColonneExtra()" id="btnExtraCols" style="background: #1769aa;">📈 Mostra e Nascondi Listini e data ordine</button>
     </div>
 
     <!-- Barra di Ordinamento Pratica a Richiesta -->
@@ -282,25 +307,7 @@
       <button class="btn-copia-van" onclick="copiaVanSelezionati()">📋 Copia VAN Selezionati</button>
       <button class="btn-riepilogo" onclick="apriRiepilogo()">📊 Riepilogo Selezione</button>
     </div>
-
-    <div id="filtri-attivi"></div>
-
-    <!-- Sezione Filtri Principali -->
-    <div style="margin-bottom: 8px; font-weight: bold; color: #00bfff; font-size: 0.95em;">📌 Filtri Principali</div>
-    <div class="filtri" id="parametri-principali"></div>
-
-    <!-- Pulsante per Mostrare/Nascondere i Filtri Secondari -->
-    <div style="margin: 15px 0 12px 0;">
-      <button id="btn-toggle-secondari" onclick="toggleFiltriSecondari()" style="background: #1c2d42; color: #00e5ff; border: 1px solid #0055aa; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.88em; display: inline-flex; align-items: center; gap: 6px;">
-        🔽 Mostra Filtri Secondari
-      </button>
-    </div>
-
-    <!-- Sezione Filtri Secondari -->
-    <div id="box-secondari" style="display: none; background: #182535; padding: 12px; border-radius: 8px; border: 1px dashed #0055aa; margin-bottom: 15px;">
-      <div style="margin-bottom: 10px; font-weight: bold; color: #94a3b8; font-size: 0.9em;">⚙️ Filtri Secondari</div>
-      <div class="filtri" id="parametri-secondari"></div>
-    </div>
+    <!-- ========================================== -->
 
     <div id="tabella-container"></div>
     <button id="btnCaricaAltri" class="btn-carica-altri" style="display:none;" onclick="caricaAltriRecord()">⬇ Carica altri veicoli</button>
