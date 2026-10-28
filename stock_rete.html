@@ -16,58 +16,60 @@
 
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: 'Open Sans', Arial, sans-serif; margin: 0; padding: 20px; background-color: #121e2d; color: white; }
+    body { font-family: 'Open Sans', Arial, sans-serif; margin: 0; padding: 10px; background-color: #121e2d; color: white; }
     
     header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-    h2 { margin: 0; font-size: 1.8em; color: #00bfff; font-weight: 700; }
+    h2 { margin: 0; font-size: 1.5em; color: #00bfff; font-weight: 700; }
 
-    .user-badge-container { display: flex; align-items: center; gap: 10px; background: #1c2d42; padding: 8px 14px; border-radius: 8px; border: 1px solid #0055aa; }
-    .user-badge-text { font-size: 0.9em; color: #00e5ff; font-weight: bold; }
-    .btn-logout { background: #d32f2f; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold; }
+    .user-badge-container { display: flex; align-items: center; gap: 10px; background: #1c2d42; padding: 6px 10px; border-radius: 8px; border: 1px solid #0055aa; }
+    .user-badge-text { font-size: 0.85em; color: #00e5ff; font-weight: bold; }
+    .btn-logout { background: #d32f2f; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: bold; }
     .btn-logout:hover { background: #b71c1c; }
 
-    .nav-bar-sezione { margin: 10px 0 20px 0; display: flex; justify-content: flex-start; }
+    .nav-bar-sezione { margin: 10px 0 15px 0; display: flex; justify-content: flex-start; }
     .btn-ritorno {
-      background: #0055aa; color: white; padding: 8px 16px; border-radius: 6px;
-      text-decoration: none; font-weight: bold; font-size: 0.9em; display: inline-flex; align-items: center; gap: 8px;
+      background: #0055aa; color: white; padding: 8px 14px; border-radius: 6px;
+      text-decoration: none; font-weight: bold; font-size: 0.85em; display: inline-flex; align-items: center; gap: 6px;
       transition: background 0.2s;
     }
     .btn-ritorno:hover { background: #004080; }
 
-    #lastUpdated { background: #1c2d42; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; color: #cccccc; border: 1px solid #0055aa; font-size: 0.9em; }
+    #lastUpdated { background: #1c2d42; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; color: #cccccc; border: 1px solid #0055aa; font-size: 0.85em; }
     
     #messaggio-filtri {
       background: #1c2d42;
       border: 1px solid #0055aa;
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-radius: 8px;
       font-weight: 600;
       margin-bottom: 15px;
       color: #00e5ff;
-      font-size: 0.95em;
-      line-height: 1.5;
+      font-size: 0.9em;
+      line-height: 1.4;
     }
     #messaggio-filtri button {
-      background: #0055aa; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 0.85em; cursor: pointer; transition: background 0.2s;
+      background: #0055aa; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em; cursor: pointer; transition: background 0.2s; margin-top: 6px; display: inline-block;
     }
     #messaggio-filtri button:hover { background: #004080; }
 
     #filtri-container {
-      display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
-      background: #182535; padding: 15px 20px; border-radius: 8px; border: 1px solid #0055aa;
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;
+      background: #182535; padding: 12px; border-radius: 8px; border: 1px solid #0055aa;
       position: relative;
-      z-index: 500; /* Mantiene il box dei filtri sopra la tabella */
+      z-index: 500;
     }
 
-    .filtro-box { display: flex; flex-direction: column; min-width: 180px; flex: 1; max-width: 240px; color: #333; position: relative; }
-    .filtro-box label { font-weight: 600; margin-bottom: 6px; color: #00bfff; font-size: 0.9em; }
+    .filtro-box { display: flex; flex-direction: column; min-width: 100%; flex: 1; color: #333; position: relative; }
+    @media (min-width: 768px) {
+      .filtro-box { min-width: 180px; max-width: 240px; }
+    }
+    .filtro-box label { font-weight: 600; margin-bottom: 4px; color: #00bfff; font-size: 0.85em; }
     .filtro-box select, .filtro-box input[type="text"] {
-      padding: 8px 10px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; background: #fff; color: #333;
+      padding: 8px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; background: #fff; color: #333;
     }
 
     .ms-parent { width: 100% !important; }
     
-    /* CORREZIONE CRITICA: Forza il menu a tendina dei filtri a sovrapporsi a tutto senza essere tagliato */
     .ms-drop {
       z-index: 99999 !important;
       background: #ffffff !important;
@@ -75,14 +77,11 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.3) !important;
       border: 1px solid #0055aa !important;
     }
-    .ms-search input {
-      color: #333 !important;
-      background: #fff !important;
-    }
+    .ms-search input { color: #333 !important; background: #fff !important; }
 
-    #btn-container { margin-bottom: 25px; display: flex; gap: 10px; }
+    #btn-container { margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; }
     #btn-applica, #btn-reset {
-      padding: 10px 22px; font-size: 15px; cursor: pointer; border: none; border-radius: 6px; color: white; font-weight: 600; transition: background-color 0.3s ease;
+      padding: 8px 16px; font-size: 14px; cursor: pointer; border: none; border-radius: 6px; color: white; font-weight: 600; flex: 1;
     }
     #btn-applica { background-color: #16803c; }
     #btn-applica:hover { background-color: #126530; }
@@ -91,7 +90,7 @@
 
     .table-responsive-wrapper {
       width: 100%;
-      max-height: 70vh;
+      max-height: 65vh;
       overflow-y: auto;
       overflow-x: auto;
       border-radius: 8px;
@@ -100,6 +99,7 @@
       margin-bottom: 20px;
       position: relative;
       z-index: 100;
+      -webkit-overflow-scrolling: touch;
     }
 
     table.dataTable { 
@@ -124,33 +124,34 @@
     }
 
     table.dataTable th, table.dataTable td { 
-      padding: 11px 14px; 
+      padding: 9px 12px; 
       text-align: left; 
       vertical-align: middle; 
-      font-size: 0.9em; 
+      font-size: 0.85em; 
       border-bottom: 1px solid #e0e0e0;
     }
     
     .dataTables_length {
       color: #ffffff;
       font-weight: 700;
-      font-size: 1.05em;
-      margin-bottom: 15px;
+      font-size: 0.95em;
+      margin-bottom: 12px;
     }
     .dataTables_length select {
       background-color: #1c2d42;
       color: #00fff0;
       border: 2px solid #00bfff;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border-radius: 6px;
       font-weight: bold;
-      font-size: 1em;
+      font-size: 0.9em;
       cursor: pointer;
     }
 
     .dataTables_info, .dataTables_paginate {
       color: #cccccc !important;
       font-weight: 600;
+      font-size: 0.85em;
       margin-top: 10px;
     }
     .dataTables_paginate .paginate_button {
@@ -158,7 +159,7 @@
       color: white !important;
       border: 1px solid #0055aa !important;
       border-radius: 4px;
-      padding: 4px 10px !important;
+      padding: 3px 8px !important;
       margin: 2px;
     }
     .dataTables_paginate .paginate_button.current {
@@ -168,23 +169,43 @@
     }
 
     .col-optional {
-      max-width: 280px;
+      max-width: 220px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .range-date { color: #666; font-style: italic; font-size: 0.9em; }
+    .range-date { color: #666; font-style: italic; font-size: 0.85em; }
 
     #modal-dettaglio {
-      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: white; color: #333; border: 2px solid #0055aa; padding: 20px; z-index: 10000; width: 90%; max-width: 850px; max-height: 85vh; overflow-y: auto; border-radius: 10px;
+      display: none; 
+      position: fixed; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%);
+      background: white; 
+      color: #333; 
+      border: 2px solid #0055aa; 
+      padding: 12px; 
+      z-index: 10000; 
+      width: 95%; 
+      max-width: 800px; 
+      max-height: 90vh; 
+      overflow-y: auto; 
+      border-radius: 10px;
       box-shadow: 0 5px 20px rgba(0,0,0,0.4);
     }
+    
     #overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; }
     
     .opt-badge-list { list-style: none; padding: 0; margin: 5px 0 0 0; }
-    .opt-badge-list li { padding: 4px 8px; background: #eef4f9; border-left: 3px solid #0055aa; margin-bottom: 4px; font-size: 0.9em; }
+    .opt-badge-list li { padding: 4px 6px; background: #eef4f9; border-left: 3px solid #0055aa; margin-bottom: 4px; font-size: 0.85em; word-break: break-word; }
+
+    #contenuto-modale table td {
+      font-size: 0.85em !important;
+      padding: 6px !important;
+      word-break: break-word;
+    }
   </style>
 </head>
 <body>
@@ -628,7 +649,7 @@ $(document).ready(function () {
         if (info.recordsDisplay !== info.recordsTotal) {
           msg = `🔍 Filtrati <strong>${info.recordsDisplay}</strong> veicoli su un totale di ${info.recordsTotal}.<br>`;
         } else {
-          msg = `📋 Mostrati <strong>${info.start + 1} - ${info.end}</strong> de <strong>${info.recordsTotal}</strong> veicoli totali.<br>`.replace('de', 'di');
+          msg = `📋 Mostrati <strong>${info.start + 1} - ${info.end}</strong> di <strong>${info.recordsTotal}</strong> veicoli totali.<br>`;
         }
 
         const datiFiltrati = table.rows({filter: 'applied'}).data().toArray();
