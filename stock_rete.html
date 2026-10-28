@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Veicoli in Rete Dealer IVECO - Socom Nuova</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/multiple-select@1.6.0/dist/multiple-select.min.css" />
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/multiple-select@1.6.0/dist/multiple-select.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Open Sans', Arial, sans-serif; margin: 0; padding: 20px; background-color: #121e2d; color: white; }
+    
+    header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+    h2 { margin: 0; font-size: 1.8em; color: #00bfff; font-weight: 700; }
+
+    .user-badge-container { display: flex; align-items: center; gap: 10px; background: #1c2d42; padding: 8px 14px; border-radius: 8px; border: 1px solid #0055aa; }
+    .user-badge-text { font-size: 0.9em; color: #00e5ff; font-weight: bold; }
+    .btn-logout { background: #d32f2f; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold; }
+    .btn-logout:hover { background: #b71c1c; }
+
+    .nav-bar-sezione { margin: 10px 0 20px 0; display: flex; justify-content: flex-start; }
+    .btn-ritorno {
+      background: #0055aa; color: white; padding: 8px 16px; border-radius: 6px;
+      text-decoration: none; font-weight: bold; font-size: 0.9em; display: inline-flex; align-items: center; gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-ritorno:hover { background: #004080; }
+
+    #lastUpdated { background: #1c2d42; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; color: #cccccc; border: 1px solid #0055aa; font-size: 0.9em; }
+    
+    #messaggio-filtri {
+      background: #1c2d42;
+      border: 1px solid #0055aa;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #00e5ff;
+      font-size: 0.95em;
+      line-height: 1.5;
+    }
+    #messaggio-filtri button {
+      background: #0055aa; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 0.85em; cursor: pointer; transition: background 0.2s;
+    }
+    #messaggio-filtri button:hover { background: #004080; }
+
+    #filtri-container {
+      display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
+      background: #182535; padding: 15px 20px; border-radius: 8px; border: 1px solid #0055aa;
+      position: relative;
+      z-index: 500; /* Mantiene il box dei filtri sopra la tabella */
+    }
+
+    .filtro-box { display: flex; flex-direction: column; min-width: 180px; flex: 1; max-width: 240px; color: #333; position: relative; }
+    .filtro-box label { font-weight: 600; margin-bottom: 6px; color: #00bfff; font-size: 0.9em; }
+    .filtro-box select, .filtro-box input[type="text"] {
+      padding: 8px 10px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; background: #fff; color: #333;
+    }
+
+    .ms-parent { width: 100% !important; }
+    
+    /* CORREZIONE CRITICA: Forza il menu a tendina dei filtri a sovrapporsi a tutto senza essere tagliato */
+    .ms-drop {
+      z-index: 99999 !important;
+      background: #ffffff !important;
+      color: #333333 !important;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3) !important;
+      border: 1px solid #0055aa !important;
+    }
+    .ms-search input {
+      color: #333 !important;
+      background: #fff !important;
+    }
+
+    #btn-container { margin-bottom: 25px; display: flex; gap: 10px; }
+    #btn-applica, #btn-reset {
+      padding: 10px 22px; font-size: 15px; cursor: pointer; border: none; border-radius: 6px; color: white; font-weight: 600; transition: background-color 0.3s ease;
+    }
+    #btn-applica { background-color: #16803c; }
+    #btn-applica:hover { background-color: #126530; }
+    #btn-reset { background-color: #d32f2f; }
+    #btn-reset:hover { background-color: #b71c1c; }
+
+    .table-responsive-wrapper {
+      width: 100%;
+      max-height: 70vh;
+      overflow-y: auto;
+      overflow-x: auto;
+      border-radius: 8px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      background: white;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 100;
+    }
+
+    table.dataTable { 
+      width: 100% !important; 
+      background: white; 
+      color: #333; 
+      margin: 0 !important; 
+      white-space: nowrap; 
+      border-collapse: collapse !important;
+    }
+
+    table.dataTable tbody tr { background-color: #ffffff; }
+    table.dataTable tbody tr:hover { background-color: #eef4f9; cursor: pointer; }
+
+    table.dataTable thead th {
+      position: sticky !important;
+      top: 0 !important;
+      background-color: #003366 !important;
+      color: white !important;
+      z-index: 200 !important;
+      box-shadow: 0 2px 2px rgba(0,0,0,0.2);
+    }
+
+    table.dataTable th, table.dataTable td { 
+      padding: 11px 14px; 
+      text-align: left; 
+      vertical-align: middle; 
+      font-size: 0.9em; 
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .dataTables_length {
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1.05em;
+      margin-bottom: 15px;
+    }
+    .dataTables_length select {
+      background-color: #1c2d42;
+      color: #00fff0;
+      border: 2px solid #00bfff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    .dataTables_info, .dataTables_paginate {
+      color: #cccccc !important;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .dataTables_paginate .paginate_button {
+      background: #1c2d42 !important;
+      color: white !important;
+      border: 1px solid #0055aa !important;
+      border-radius: 4px;
+      padding: 4px 10px !important;
+      margin: 2px;
+    }
+    .dataTables_paginate .paginate_button.current {
+      background: #0055aa !important;
+      color: white !important;
+      font-weight: bold;
+    }
+
+    .col-optional {
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .range-date { color: #666; font-style: italic; font-size: 0.9em; }
+
+    #modal-dettaglio {
+      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: white; color: #333; border: 2px solid #0055aa; padding: 20px; z-index: 10000; width: 90%; max-width: 850px; max-height: 85vh; overflow-y: auto; border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    }
+    #overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; }
+    
+    .opt-badge-list { list-style: none; padding: 0; margin: 5px 0 0 0; }
+    .opt-badge-list li { padding: 4px 8px; background: #eef4f9; border-left: 3px solid #0055aa; margin-bottom: 4px; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+
+<script>
+    if (sessionStorage.getItem("isAuthorized") !== "true" || sessionStorage.getItem("userRole") !== "admin") {
+        alert("Accesso negato: sezione riservata agli amministratori.");
+        window.location.href = "app.html";
+    }
+</script>
+
+<header>
+  <div>
+    <h2>Veicoli in Rete Dealer IVECO - Socom Nuova</h2>
+    <div id="lastUpdated" style="margin-top: 5px;">Caricamento data aggiornamento...</div>
+  </div>
+  
+  <div class="user-badge-container">
+    <div class="user-badge-text">👤 Utente: <span id="nomeUtenteLogged">Admin</span> (<span id="ruoloUtenteLabel">ADMIN</span>)</div>
+    <button class="btn-logout" onclick="logout()">Esci</button>
+  </div>
+</header>
+
+<div class="nav-bar-sezione">
+  <a href="app.html" class="btn-ritorno">
+    ⬅ Torna alla Stock Principale Socom
+  </a>
+</div>
+
+<div id="messaggio-filtri">Caricamento dati e incrocio optional in corso...</div>
+
+<div id="filtri-container"></div>
+
+<div id="btn-container">
+  <button id="btn-applica">Applica Filtri</button>
+  <button id="btn-reset">Reset Filtri</button>
+</div>
+
+<div class="table-responsive-wrapper">
+  <table id="tabella" class="display" style="width:100%">
+    <thead><tr></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div id="overlay"></div>
+<div id="modal-dettaglio">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #ddd; padding-bottom: 8px;">
+    <h3 id="titolo-modale" style="margin: 0; color: #123e63;">Dettaglio Veicolo</h3>
+    <div>
+      <button id="toggle-concessionario" style="margin-right: 10px; padding: 5px 10px; cursor: pointer; background: #0055aa; color: white; border: none; border-radius: 4px; font-weight: bold; display:none;">Nascondi Concessionario</button>
+      <button id="chiudi-modale" style="font-size: 16px; cursor: pointer; background: #d32f2f; color: white; border: none; border-radius: 4px; padding: 5px 10px; font-weight: bold;">&times; Chiudi</button>
+    </div>
+  </div>
+  <div id="contenuto-modale"></div>
+</div>
+
+<script>
+  const currentUser = sessionStorage.getItem("currentUser") || "Admin";
+  document.getElementById("nomeUtenteLogged").textContent = currentUser;
+
+  function logout() {
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  }
+
+  function fetchGistUpdate() {
+    fetch(`https://api.github.com/gists/8eef93f4d67ccbdb1aaaf6d94196095d`)
+      .then(res => res.json())
+      .then(data => {
+        const dt = new Date(data.updated_at);
+        document.getElementById('lastUpdated').innerText = `Ultimo aggiornamento dati (Gist): ${dt.toLocaleString('it-IT')}`;
+      })
+      .catch(() => {
+        document.getElementById('lastUpdated').innerText = "Impossibile recuperare data aggiornamento";
+      });
+  }
+
+  window.addEventListener('DOMContentLoaded', fetchGistUpdate);
+</script>
+
+<script>
+const cacheBuster = "?t=" + new Date().getTime();
+const urlRete = "https://gist.githubusercontent.com/MaCSpina/8eef93f4d67ccbdb1aaaf6d94196095d/raw/veicoli_rete_con_versione_passo_furgone.csv" + cacheBuster;
+const apiOptionalGist = "https://api.github.com/gists/3f99e0346bab2fe686f1ee8572be63f7";
+
+function settimanaToRange(settimanaStr) {
+  const match = /^(\d{4})-(\d{1,2})$/.exec(settimanaStr);
+  if (!match) return settimanaStr;
+  const year = parseInt(match[1], 10);
+  const week = parseInt(match[2], 10);
+  const simple = new Date(year, 0, 1 + (week - 1) * 7);
+  const dow = simple.getDay();
+  const monday = new Date(simple);
+  if (dow <= 4) {
+    monday.setDate(simple.getDate() - simple.getDay() + 1);
+  } else {
+    monday.setDate(simple.getDate() + 8 - simple.getDay());
+  }
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const format = (d) => d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return `${settimanaStr} <span class="range-date">(${format(monday)} - ${format(sunday)})</span>`;
+}
+
+function escapeRegex(text) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+function escapeJQuerySelector(str) {
+  return str.replace(/([ #;&,.+*~\':"!^$[\]()=>|/@])/g, '\\$1');
+}
+
+$(document).ready(function () {
+  $.ajax({
+    url: urlRete,
+    dataType: "text"
+  }).done(function (resRete) {
+    $.ajax({
+      url: apiOptionalGist,
+      dataType: "json"
+    }).always(function (gistResponse) {
+      let optionalMap = {};
+
+      try {
+        if (gistResponse && gistResponse.files) {
+          const filenames = Object.keys(gistResponse.files);
+          let targetFilename = filenames.find(f => f.toLowerCase().includes('optional'));
+          if (!targetFilename && filenames.length > 0) {
+            targetFilename = filenames[0];
+          }
+
+          if (targetFilename && gistResponse.files[targetFilename]) {
+            const csvContent = gistResponse.files[targetFilename].content;
+            const parsedOpt = Papa.parse(csvContent, { header: true, skipEmptyLines: true, delimiter: ";" });
+            
+            parsedOpt.data.forEach(row => {
+              const cleanRow = {};
+              for (let k in row) {
+                cleanRow[k.trim().toLowerCase().replace(/["']/g, '')] = String(row[k] || "").trim();
+              }
+
+              const versioneVal = cleanRow["versione"] || "";
+              const codOptRaw = cleanRow["optional"] || "";
+              const descOpt = cleanRow["descrizione"] || "";
+              let prezzoVal = parseFloat((cleanRow["prezzo"] || "0").replace(',', '.')) || 0;
+
+              if (versioneVal && codOptRaw && descOpt) {
+                const chiave10 = versioneVal.substring(0, 10).toUpperCase();
+                const codNormalized = codOptRaw.replace(/^0+/, '');
+                
+                if (!optionalMap[chiave10]) {
+                  optionalMap[chiave10] = {};
+                }
+                optionalMap[chiave10][codNormalized] = {
+                  descrizione: descOpt,
+                  prezzo: prezzoVal
+                };
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("Errore parsing optional:", e);
+      }
+
+      const parsedRete = Papa.parse(resRete, { header: true, skipEmptyLines: true, delimiter: ";" });
+      let originalData = parsedRete.data;
+
+      const colsDaEscludere = [
+        "Discretional Discount Request", "Discretional Discount Approved",
+        "Marketing Campaign", "Marketing Campaign Approved", "Unnamed: 16",
+        "Nr Ordine", "Stato Refurbishing", "Cliente Finale", "Order Date",
+        "Soglia di Fatturazione", "Data inserimento OCF", "Nr Preventivo",
+        "Rif. Ordine Dealer", "Richiesta Sconto Discrezionale",
+        "Sconto Discrezionale Approvato", "Richiesta Campagna Marketing",
+        "Campagna Marketing Approvata"
+      ];
+
+      const allPossibleKeys = new Set();
+      originalData.forEach(row => {
+        if (row) { Object.keys(row).forEach(k => allPossibleKeys.add(k.trim())); }
+      });
+      const uniqueKeysList = Array.from(allPossibleKeys);
+
+      let cleanedData = originalData.map(row => {
+        const newRow = {};
+        let biVal = "";
+        let vpVal = "";
+
+        for (let k in row) {
+          const cleanK = k.trim();
+          const lowerK = cleanK.toLowerCase().replace(/[\s\.]/g, '');
+          let val = row[k];
+          if (typeof val === 'string') val = val.trim();
+
+          if (lowerK === "bi" || lowerK === "bloccointerscambio") {
+            biVal = val;
+          }
+          if (cleanK.toUpperCase() === "VP" || lowerK === "vp") {
+            vpVal = val;
+          }
+
+          newRow[cleanK] = val !== undefined && val !== null ? val : "";
+        }
+        
+        newRow["B. I."] = (biVal !== undefined && biVal !== null && String(biVal).trim() !== "") ? String(biVal).trim() : "";
+
+        if (vpVal && vpVal.length >= 5) {
+          const vp10 = vpVal.substring(0, 10).toUpperCase();
+          const optCatalogo = optionalMap[vp10];
+
+          if (optCatalogo) {
+            let descrizioniRisolte = [];
+            let listaDettaglio = [];
+
+            for (let k in newRow) {
+              if (k.toLowerCase().includes('optional') || k.toLowerCase().includes('opzion')) {
+                let cellaVal = String(newRow[k] || "").trim();
+                if (cellaVal) {
+                  let codiciSingoli = cellaVal.split(/\s+/);
+                  let descrizioniSingole = [];
+
+                  codiciSingoli.forEach(codReteRaw => {
+                    let codReteNorm = codReteRaw.replace(/^0+/, '');
+                    if (optCatalogo[codReteNorm]) {
+                      let optInfo = optCatalogo[codReteNorm];
+                      let testoItem = `[${codReteRaw}] ${optInfo.descrizione}`;
+                      
+                      if (optInfo.prezzo > 0) {
+                        testoItem = `<strong>${testoItem}</strong>`;
+                      }
+
+                      descrizioniSingole.push(testoItem);
+                      descrizioniRisolte.push(testoItem);
+                      listaDettaglio.push({ colonna: k, codice: codReteRaw, descrizione: optInfo.descrizione, prezzo: optInfo.prezzo });
+                    } else {
+                      descrizioniSingole.push(codReteRaw);
+                      listaDettaglio.push({ colonna: k, codice: codReteRaw, descrizione: codReteRaw, prezzo: 0 });
+                    }
+                  });
+
+                  newRow[k] = descrizioniSingole.join(", ");
+                }
+              }
+            }
+
+            if (descrizioniRisolte.length > 0) {
+              newRow["Optional_Descrizione"] = descrizioniRisolte.join(", ");
+              newRow["Optional_Lista"] = listaDettaglio;
+            }
+          }
+        }
+
+        return newRow;
+      }).filter(row => row["Modello"] || row["Nr Veicolo"]);
+
+      cleanedData.forEach(row => {
+        if (row["Data Consegna Stimata"]) {
+          row["Data Consegna Stimata"] = settimanaToRange(row["Data Consegna Stimata"]);
+        }
+      });
+
+      const finalCols = uniqueKeysList.filter(c => {
+        return !colsDaEscludere.some(ex => ex.toLowerCase() === c.toLowerCase());
+      });
+
+      if (!finalCols.includes("B. I.")) { finalCols.push("B. I."); }
+
+      const mappingFiltri = {
+        "VAN": ["VAN", "Nr Veicolo", "Nr. Veicolo", "Veicolo"],
+        "Modello": ["Modello"],
+        "Stato Primario": ["Stato Primario", "Stato primario"],
+        "Concessionario": ["Concessionario", "Dealer", "Concessionaria"],
+        "Passo": ["Passo"],
+        "Altezza Furgone": ["Altezza Furgone", "Altezza furgone", "Altezza"],
+        "B. I.": ["B. I.", "B.I.", "BI"]
+      };
+
+      const resolvedCols = {};
+      Object.keys(mappingFiltri).forEach(logicalKey => {
+        const candidates = mappingFiltri[logicalKey];
+        const found = finalCols.find(k => {
+          const cleanK = k.toLowerCase().replace(/[\s\.]/g, '');
+          return candidates.some(c => cleanK === c.toLowerCase().replace(/[\s\.]/g, ''));
+        });
+        resolvedCols[logicalKey] = found || logicalKey;
+      });
+
+      const colonneDaFiltrare = Object.values(resolvedCols);
+      const filtriContainer = $('#filtri-container').empty();
+
+      colonneDaFiltrare.forEach(col => {
+        const logicalLabel = Object.keys(resolvedCols).find(k => resolvedCols[k] === col) || col;
+        const filtroBox = $('<div class="filtro-box"></div>');
+        filtroBox.append(`<label for="filtro_${escapeJQuerySelector(col)}">${logicalLabel}</label>`);
+
+        const select = $('<select multiple></select>').attr('id', 'filtro_' + col);
+        const uniqueVals = [...new Set(cleanedData.map(r => {
+          const v = r[col];
+          return (v === undefined || v === null || String(v).trim() === '') ? '(Vuoto)' : String(v).trim();
+        }))].sort((a, b) => {
+          if (a === '(Vuoto)') return 1;
+          if (b === '(Vuoto)') return -1;
+          return a.localeCompare(b);
+        });
+        
+        uniqueVals.forEach(val => { select.append(`<option value="${val}">${val}</option>`); });
+        filtroBox.append(select);
+        filtriContainer.append(filtroBox);
+      });
+
+      const theadRow = $('#tabella thead tr');
+      theadRow.empty();
+
+      finalCols.forEach(col => {
+        theadRow.append(`<th>${col}</th>`);
+      });
+
+      const table = $('#tabella').DataTable({
+        data: cleanedData,
+        columns: finalCols.map(col => {
+          const isOptCol = col.toLowerCase().includes('optional') || col.toLowerCase().includes('opzion');
+          return {
+            data: col,
+            title: col,
+            defaultContent: "",
+            className: isOptCol ? "col-optional" : "",
+            render: function(data, type, row) {
+              return data;
+            }
+          };
+        }),
+        pageLength: 25,
+        language: {
+          emptyTable: "Nessun dato disponibile",
+          zeroRecords: "Nessun veicolo trovato",
+          infoEmpty: "Mostrati da 0 a 0 di 0 elementi",
+          infoFiltered: "(filtrati da _MAX_ elementi totali)",
+          info: "Mostrati da _START_ a _END_ di _TOTAL_ elementi",
+          lengthMenu: "Mostra _MENU_ elementi per pagina",
+          paginate: { first: "Primo", last: "Ultimo", next: "Successivo", previous: "Precedente" }
+        },
+        dom: 'lrtip'
+      });
+
+      function apriModaleConDati(data) {
+        let html = '<table style="width:100%; border-collapse: collapse;">';
+        for (const key in data) {
+          if (data.hasOwnProperty(key) && !colsDaEscludere.some(ex => ex.toLowerCase() === key.toLowerCase()) && key !== "Optional_Descrizione" && key !== "Optional_Lista") {
+            const classeExtra = key.toLowerCase() === "concessionario" ? ' class="riga-concessionario"' : '';
+            let valoreMostrato = data[key] || "—";
+
+            if (key.toLowerCase().includes('optional') && data["Optional_Lista"]) {
+              let optTrovato = data["Optional_Lista"].filter(o => o.colonna === key);
+              if (optTrovato.length > 0) {
+                let badgeHtml = '<ul class="opt-badge-list">';
+                optTrovato.forEach(opt => {
+                  let stileGrassetto = opt.prezzo > 0 ? 'font-weight: bold; color: #003366;' : '';
+                  badgeHtml += `<li style="${stileGrassetto}"><strong>[${opt.codice}]</strong> ${opt.descrizione} ${opt.prezzo > 0 ? '(Extra: € ' + opt.prezzo + ')' : ''}</li>`;
+                });
+                badgeHtml += '</ul>';
+                valoreMostrato = badgeHtml;
+              }
+            }
+
+            html += `<tr${classeExtra}><td style="font-weight:bold; border: 1px solid #ddd; padding:8px; background:#f0f4f8; width:35%;">${key}</td><td style="border: 1px solid #ddd; padding:8px; word-break: break-word;">${valoreMostrato}</td></tr>`;
+          }
+        }
+        html += '</table>';
+        $('#titolo-modale').text("Dettaglio Veicolo");
+        $('#toggle-concessionario').show();
+        $('#contenuto-modale').html(html);
+        $('#modal-dettaglio, #overlay').show();
+      }
+
+      function mostraDettaglioCombinato(contatori) {
+        const righeOrdinate = Object.entries(contatori).sort((a, b) => {
+          const [modA, passoA, altA] = a[0].split(' | ');
+          const [modB, passoB, altB] = b[0].split(' | ');
+          if (modA !== modB) return modA.localeCompare(modB);
+          if (passoA !== passoB) return passoA.localeCompare(passoB);
+          return altA.localeCompare(altB);
+        });
+
+        let html = '<table style="width:100%; border-collapse: collapse; font-size:14px;">';
+        html += '<tr style="background:#003366; color:white;"><th style="border: 1px solid #ddd; padding:8px;">Modello</th><th style="border: 1px solid #ddd; padding:8px;">Passo</th><th style="border: 1px solid #ddd; padding:8px;">Altezza Furgone</th><th style="border: 1px solid #ddd; padding:8px; text-align:right;">Quantità</th></tr>';
+
+        let modelloCorrente = null;
+        righeOrdinate.forEach(([key, count]) => {
+          const [modello, passo, altezza] = key.split(' | ');
+          const altezzaVisibile = (!altezza || altezza.trim() === "" || altezza.trim().toLowerCase() === "sconosciuto") ? "—" : altezza;
+
+          if (modello !== modelloCorrente) {
+            modelloCorrente = modello;
+            html += `<tr style="background:#eaf3fb;"><td colspan="4" style="font-weight:bold; border: 1px solid #ddd; padding:6px; color:#0055aa;">Modello: ${modello}</td></tr>`;
+          }
+
+          html += `<tr>
+            <td style="border: 1px solid #ddd; padding:6px;"></td>
+            <td style="border: 1px solid #ddd; padding:6px;">${passo}</td>
+            <td style="border: 1px solid #ddd; padding:6px;">${altezzaVisibile}</td>
+            <td style="border: 1px solid #ddd; padding:6px; text-align:right; font-weight:bold;">${count}</td>
+          </tr>`;
+        });
+
+        html += '</table>';
+        
+        $('#titolo-modale').text("Riepilogo per Modello, Passo e Altezza Furgone");
+        $('#toggle-concessionario').hide();
+        $('#contenuto-modale').html(html);
+        $('#modal-dettaglio, #overlay').show();
+      }
+
+      $('#chiudi-modale, #overlay').on('click', function() {
+        $('#modal-dettaglio, #overlay').hide();
+      });
+
+      $('#tabella tbody').on('click', 'tr', function () {
+        const datiRiga = table.row(this).data();
+        apriModaleConDati(datiRiga);
+      });
+
+      $('#toggle-concessionario').on('click', function () {
+        const celle = $('#contenuto-modale td').filter(function () {
+          return $(this).text().trim().toLowerCase() === 'concessionario';
+        });
+        celle.each(function () {
+          const $riga = $(this).closest('tr');
+          $riga.toggle();
+        });
+        const isHidden = $('#contenuto-modale td').filter(function () {
+          return $(this).text().trim().toLowerCase() === 'concessionario';
+        }).closest('tr').is(':hidden');
+        $(this).text(isHidden ? 'Mostra Concessionario' : 'Nascondi Concessionario');
+      });
+
+      function aggiornaMessaggio() {
+        const info = table.page.info();
+        let msg = "";
+        if (info.recordsDisplay !== info.recordsTotal) {
+          msg = `🔍 Filtrati <strong>${info.recordsDisplay}</strong> veicoli su un totale di ${info.recordsTotal}.<br>`;
+        } else {
+          msg = `📋 Mostrati <strong>${info.start + 1} - ${info.end}</strong> de <strong>${info.recordsTotal}</strong> veicoli totali.<br>`.replace('de', 'di');
+        }
+
+        const datiFiltrati = table.rows({filter: 'applied'}).data().toArray();
+        const contatoriCombinati = {};
+
+        const colMod = resolvedCols["Modello"] || "Modello";
+        const colPasso = resolvedCols["Passo"] || "Passo";
+        const colAltezza = resolvedCols["Altezza Furgone"] || "Altezza Furgone";
+
+        datiFiltrati.forEach(item => {
+          const modello = item[colMod] || "Sconosciuto";
+          const passo = item[colPasso] || "Sconosciuto";
+          const altezza = item[colAltezza] || "—";
+          const key = `${modello} | ${passo} | ${altezza}`;
+          contatoriCombinati[key] = (contatoriCombinati[key] || 0) + 1;
+        });
+
+        const totaleCombinazioni = Object.keys(contatoriCombinati).length;
+        msg += `Combinazioni uniche (Modello / Passo / Altezza): <strong>${totaleCombinazioni}</strong> <button id="btn-dettaglio-modelli" style="margin-left:10px;">Visualizza Dettaglio Riepilogo</button>`;
+
+        $('#messaggio-filtri').html(msg);
+
+        $('#btn-dettaglio-modelli').off('click').on('click', function(e) {
+          e.stopPropagation();
+          mostraDettaglioCombinato(contatoriCombinati);
+        });
+      }
+
+      function aggiornaFiltri() {
+        colonneDaFiltrare.forEach(col => {
+          const index = finalCols.indexOf(col);
+          if (index !== -1) {
+            const filtro = $('#' + escapeJQuerySelector('filtro_' + col));
+            if (filtro.length) {
+              let vals = filtro.multipleSelect('getSelects');
+              if (vals && vals.length > 0) {
+                if (col === resolvedCols["B. I."]) {
+                  const wantsVuoto = vals.includes('(Vuoto)');
+                  const wantsX = vals.includes('X');
+
+                  if (wantsVuoto && !wantsX) {
+                    table.column(index).search('^$', true, false);
+                  } else if (wantsX && !wantsVuoto) {
+                    table.column(index).search('^X$', true, false);
+                  } else {
+                    table.column(index).search('', true, false);
+                  }
+                } else {
+                  const regexParts = vals.map(v => v === '(Vuoto)' ? '^$' : '^' + escapeRegex(v) + '$');
+                  table.column(index).search(regexParts.join('|'), true, false);
+                }
+              } else {
+                table.column(index).search('');
+              }
+            }
+          }
+        });
+        table.draw();
+        aggiornaMessaggio();
+      }
+
+      function resettaFiltri() {
+        colonneDaFiltrare.forEach(col => {
+          const filtro = $('#' + escapeJQuerySelector('filtro_' + col));
+          if (filtro.length) {
+            filtro.multipleSelect('uncheckAll');
+            filtro.multipleSelect('close');
+          }
+        });
+        table.columns().search('').draw();
+        aggiornaMessaggio();
+      }
+
+      colonneDaFiltrare.forEach(col => {
+        const filtro = $('#' + escapeJQuerySelector('filtro_' + col));
+        if (filtro.length) {
+          filtro.multipleSelect({
+            placeholder: `Filtra ${col}`,
+            filter: true,
+            selectAll: false
+          });
+          filtro.multipleSelect('refresh');
+        }
+      });
+
+      $('#btn-applica').on('click', aggiornaFiltri);
+      $('#btn-reset').on('click', resettaFiltri);
+
+      aggiornaMessaggio();
+    });
+  }).fail(function() {
+    $('#messaggio-filtri').html("❌ Errore critico nel caricamento del file Gist principale.");
+  });
+});
+</script>
+
+</body>
+</html>
