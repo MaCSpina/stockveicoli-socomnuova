@@ -242,6 +242,23 @@
   </a>
 </div>
 
+<!-- Pulsante Veicoli in Rete (Visibile SOLO agli Admin) -->
+<div id="btn-rete-container" style="display: none; margin: 10px 0;">
+  <a href="stock_rete.html" style="background: #0055aa; color: white; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.95em; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+    🌐 Visualizza Veicoli in Rete Dealer
+  </a>
+</div>
+
+<script>
+  // Mostra il pulsante della rete SOLO se l'utente loggato è un amministratore
+  document.addEventListener("DOMContentLoaded", function() {
+    const userRole = sessionStorage.getItem("userRole");
+    if (userRole === "admin") {
+      document.getElementById("btn-rete-container").style.display = "block";
+    }
+  });
+</script>
+
   <main>
     <div class="toolbar">
       <button onclick="resettaFiltro()">Reset Filtro</button>
