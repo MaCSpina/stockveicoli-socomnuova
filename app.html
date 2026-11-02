@@ -21,7 +21,7 @@
     .btn-logout:hover { background: #b71c1c; }
 
     /* Barra di Navigazione Separata per Contratti */
-    .nav-bar-sezione { margin: 10px 0 20px 0; display: flex; justify-content: flex-start; }
+    .nav-bar-sezione { margin: 10px 0 20px 0; display: flex; justify-content: flex-start; gap: 10px; flex-wrap: wrap; }
     .btn-contratti-nav {
       background: #16803c;
       color: white;
@@ -237,6 +237,7 @@
 
 <!-- Barra di Navigazione Separata -->
 <div class="nav-bar-sezione">
+  <a href="dealup.html" class="btn-contratti-nav" style="background:#e85d04; border:2px solid #b83c00; box-shadow:0 3px 9px rgba(184,60,0,.35); font-size:1em; padding:11px 20px;" title="Gestione contratti DealUp">🪄 Contratti DealUp</a>
   <a href="contratti.html" class="btn-contratti-nav" onclick="logNavigazioneContratti(event)">
     📋 Contratti con veicoli in arrivo
   </a>
@@ -1479,35 +1480,38 @@
         return;
       }
 
-      finestraStampa.document.write(`
-        <!DOCTYPE html>
-        <html lang="it">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Scheda veicolo</title>
-            <style>
-              * { box-sizing: border-box; }
-              body { font-family: Arial, Helvetica, sans-serif; color: #243447; background: #fff; margin: 0; padding: 18px; font-size: 14px; line-height: 1.45; }
-              .modale-doppia-colonna { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-              .colonna-sinistra, .colonna-destra { min-width: 0; background: #fff; }
-              h2 { margin: 0 0 14px; padding: 0 0 10px; color: #123e63; font-size: 22px; border-bottom: 3px solid #00a6d6; }
-              h3 { margin: 4px 0 12px; padding: 9px 12px; color: #123e63; font-size: 17px; background: #eaf4fb; border-left: 4px solid #00a6d6; border-radius: 4px; }
-              .lista-dettagli { list-style: none; padding: 0; margin: 0; }
-              .lista-dettagli li { display: grid; grid-template-columns: minmax(115px, 42%) minmax(0, 1fr); gap: 10px; padding: 8px 10px; margin: 0; border-bottom: 1px solid #e4ebf0; overflow-wrap: anywhere; }
-              .lista-dettagli li:nth-child(even) { background: #f5f9fc; }
-              .lista-dettagli li strong { color: #34546d; text-align: left; }
-              .lista-dettagli li span { color: #172b3a; text-align: left; }
-              .tabella-optional { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
-              .tabella-optional th, .tabella-optional td { border: 1px solid #d6e0e8; padding: 8px; text-align: left; overflow-wrap: anywhere; }
-              .tabella-optional th { background: #123e63; color: #fff; }
-              .tabella-optional tbody tr:nth-child(even) { background: #f5f9fc; }
-              a { color: #075b96; }
-            </style>
-          </head>
-          <body>${contenuto}</body>
-        </html>
-      `);
+      const htmlStampa = [
+        "\n",
+        "        <!DOCTYPE html>\n",
+        "        <html lang=\"it\">\n",
+        "          <head>\n",
+        "            <meta charset=\"UTF-8\">\n",
+        "            <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n",
+        "            <title>Scheda veicolo</title>\n",
+        "            <style>\n",
+        "              * { box-sizing: border-box; }\n",
+        "              body { font-family: Arial, Helvetica, sans-serif; color: #243447; background: #fff; margin: 0; padding: 18px; font-size: 14px; line-height: 1.45; }\n",
+        "              .modale-doppia-colonna { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }\n",
+        "              .colonna-sinistra, .colonna-destra { min-width: 0; background: #fff; }\n",
+        "              h2 { margin: 0 0 14px; padding: 0 0 10px; color: #123e63; font-size: 22px; border-bottom: 3px solid #00a6d6; }\n",
+        "              h3 { margin: 4px 0 12px; padding: 9px 12px; color: #123e63; font-size: 17px; background: #eaf4fb; border-left: 4px solid #00a6d6; border-radius: 4px; }\n",
+        "              .lista-dettagli { list-style: none; padding: 0; margin: 0; }\n",
+        "              .lista-dettagli li { display: grid; grid-template-columns: minmax(115px, 42%) minmax(0, 1fr); gap: 10px; padding: 8px 10px; margin: 0; border-bottom: 1px solid #e4ebf0; overflow-wrap: anywhere; }\n",
+        "              .lista-dettagli li:nth-child(even) { background: #f5f9fc; }\n",
+        "              .lista-dettagli li strong { color: #34546d; text-align: left; }\n",
+        "              .lista-dettagli li span { color: #172b3a; text-align: left; }\n",
+        "              .tabella-optional { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }\n",
+        "              .tabella-optional th, .tabella-optional td { border: 1px solid #d6e0e8; padding: 8px; text-align: left; overflow-wrap: anywhere; }\n",
+        "              .tabella-optional th { background: #123e63; color: #fff; }\n",
+        "              .tabella-optional tbody tr:nth-child(even) { background: #f5f9fc; }\n",
+        "              a { color: #075b96; }\n",
+        "            </style>\n",
+        "          </head>\n",
+        "          <body>" + contenuto + "</bo" + "dy>\n",
+        "        </ht" + "ml>\n",
+        "      \n"
+      ].join("");
+      finestraStampa.document.write(htmlStampa);
       finestraStampa.document.close();
       finestraStampa.focus();
       setTimeout(() => finestraStampa.print(), 300);
