@@ -4,7 +4,23 @@ const $=id=>document.getElementById(id);
 function items(section){return (section?.group||[]).flatMap(g=>g.carList||[])}
 function parseMoney(v){if(typeof v==='number')return v;if(v==null)return null;let s=String(v).replace(/[€\s]/g,'');if(s.includes(',')&&s.includes('.'))s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');else if(s.includes(','))s=s.replace(',','.');let n=Number(s);return Number.isFinite(n)?n:null}
 function money(v){return v==null?'':new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v)}
-function opts(data){const out=[];for(const c of data.detailsPrintList?.fcsuserselected?.fcsCar?.capitoloList||[])for(const s of c.sottoCapitoloList||[])for(const v of s.caratteristiche||[]){if(['DEFAULT_HIDE','REMOVED'].includes(v.status))continue;const d=(v.descrizioneCustom||v.valore||'').trim(),code=(v.codiceUnivoco||v.codice||'').trim();if(d)out.push((code+' '+d).trim())}return [...new Set(out)]}
+function opts(data){
+  const out=[];
+  // Pacchetti: riportare il nome commerciale del pacchetto, non ogni componente interno.
+  for(const group of data.detailsPrintList?.pack?.group||[]){
+    const name=String(group.groupname||group.group||'').trim();
+    if(name && (group.carList||[]).some(v=>!['DEFAULT_HIDE','REMOVED'].includes(v.status)))out.push('PACCHETTO '+name);
+  }
+  for(const c of data.detailsPrintList?.fcsuserselected?.fcsCar?.capitoloList||[])
+    for(const s of c.sottoCapitoloList||[])
+      for(const v of s.caratteristiche||[]){
+        if(['DEFAULT_HIDE','REMOVED'].includes(v.status))continue;
+        const d=String(v.descrizioneCustom||v.valore||'').trim();
+        const code=String(v.codiceUnivoco||v.codice||'').trim();
+        if(d)out.push((code+' '+d).trim());
+      }
+  return [...new Set(out)];
+}
 function optionLines(options,number,font){const widths=[470,505,315],lines=['','',''];for(const value of options){let placed=false;for(let i=0;i<3;i++){const candidate=lines[i]?lines[i]+'; '+value:value;if(font.widthOfTextAtSize(candidate,7.5)<=widths[i]){lines[i]=candidate;placed=true;break}}if(!placed)return ['Optional come da offerta DealUp '+number+' allegata','','']}return lines}
 function extraNote(data){
   const costs=Array.isArray(data.pricing?.otherCosts)?data.pricing.otherCosts:[];
@@ -48,14 +64,5 @@ for(const [name,value] of Object.entries(values)){const field=form.getTextField(
 const extras=Object.fromEntries((calc.vehicleExtras||[]).filter(v=>v&&typeof v==='object').map(v=>[v.itemId,v]));if((parseMoney(extras.transport?.customerFinalPrice)||0)>0)form.getCheckBox('Check Box2').check();if((parseMoney(extras.registration?.customerFinalPrice)||0)>0)form.getCheckBox('Check Box3').check();
 const bytes=await doc.save();const blob=new Blob([bytes],{type:'application/pdf'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='Contratto_'+number.replace(/[^\w-]/g,'_')+'.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
 }
-window.dealupCreateContract=async function(data){
-  try{
-    const result=await createContract(data);
-    window.dealupLog?.('Generazione PDF contratto - download avviato','OK',data);
-    return result;
-  }catch(error){
-    window.dealupLog?.('Generazione PDF contratto','ERRORE',data,error?.message||String(error));
-    throw error;
-  }
-};
+window.dealupCreateContract=createContract;
 })();
