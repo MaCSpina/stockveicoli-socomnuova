@@ -65,21 +65,46 @@ body{background:#e9edf1;color:#222;font-family:Arial,Helvetica,sans-serif}
 if(sessionStorage.getItem('isAuthorized')!=='true'){location.replace('index.html');}
 let selected=null;let seq=0;const pending=new Map();const status=document.getElementById('status');
 // Logging DealUp: usa lo stesso Apps Script dello Stock.
-const dealupLogUrl=sessionStorage.getItem('URL_LOG_SCRIPT')||'';
+let dealupLogUrl=sessionStorage.getItem('URL_LOG_SCRIPT')||'';
+const dealupLogQueue=[];
+async function dealupResolveLogUrl(){
+  if(dealupLogUrl)return dealupLogUrl;
+  try{
+    const r=await fetch('config.json?nocache='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw Error('config.json HTTP '+r.status);
+    const cfg=await r.json();
+    dealupLogUrl=cfg.URL_LOG_SCRIPT||'';
+    if(dealupLogUrl)sessionStorage.setItem('URL_LOG_SCRIPT',dealupLogUrl);
+  }catch(e){console.warn('DealUp: configurazione log non disponibile',e);}
+  return dealupLogUrl;
+}
+function dealupSendLog(payload){
+  if(!dealupLogUrl)return false;
+  try{
+    const blob=new Blob([payload],{type:'text/plain;charset=UTF-8'});
+    if(navigator.sendBeacon&&navigator.sendBeacon(dealupLogUrl,blob))return true;
+    fetch(dealupLogUrl,{method:'POST',mode:'no-cors',body:blob,keepalive:true}).catch(e=>console.warn('DealUp: invio log fallito',e));
+    return true;
+  }catch(e){console.warn('DealUp: invio log fallito',e);return false;}
+}
+async function dealupFlushLog(){
+  if(!await dealupResolveLogUrl()){
+    console.warn('DealUp: URL_LOG_SCRIPT assente, log non inviati');
+    return;
+  }
+  while(dealupLogQueue.length)dealupSendLog(dealupLogQueue.shift());
+}
 let dealupIp='Non rilevato';
 fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>{dealupIp=d.ip||dealupIp}).catch(()=>{});
 window.dealupLog=function(evento,esito='OK',data=null,errore=''){
-  if(!dealupLogUrl){console.warn('DealUp: URL_LOG_SCRIPT non presente nella sessione');return false;}
   const w=data?.welcome||selected?.welcome||{};
   const cliente=w.contatto?.nome||'';
   const safe=v=>String(v??'').replace(/[\r\n|]/g,' ').slice(0,240);
   const note=['DealUp',safe(evento),'Esito: '+safe(esito),'Offerta: '+safe(w.numeroOfferta),'Cliente: '+safe(cliente),'Venditore: '+safe(w.responsabile),errore?'Errore: '+safe(errore):'', 'IP: '+dealupIp].filter(Boolean).join(' | ');
   const payload=JSON.stringify({utente:sessionStorage.getItem('currentUser')||'Ospite',note,dispositivo:navigator.userAgent});
-  try{
-    if(navigator.sendBeacon)return navigator.sendBeacon(dealupLogUrl,new Blob([payload],{type:'text/plain;charset=UTF-8'}));
-    fetch(dealupLogUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:payload,keepalive:true}).catch(()=>{});
-    return true;
-  }catch(e){console.warn('DealUp: invio log non riuscito',e);return false;}
+  dealupLogQueue.push(payload);
+  void dealupFlushLog();
+  return true;
 };
 window.dealupLog('Accesso pagina','OK');
 
