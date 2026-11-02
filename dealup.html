@@ -1,0 +1,74 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contratti DealUp</title><style>body{font:15px system-ui,Arial;background:#f3f6fb;color:#1c293b;margin:0}header{background:#172c46;color:white;padding:18px 5%}main{max-width:1050px;margin:24px auto;padding:0 18px}.panel{background:white;padding:22px;border-radius:12px;box-shadow:0 2px 12px #142a4d12;margin-bottom:16px}button,.btn{background:#1454a3;color:white;border:0;border-radius:7px;padding:10px 15px;cursor:pointer;text-decoration:none;display:inline-block;margin:4px}button:disabled{opacity:.5}input{margin:8px}.editgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}.editgrid label{display:flex;flex-direction:column;font-weight:600;font-size:13px}.editgrid input,.editgrid textarea{margin:5px 0;padding:9px;border:1px solid #bdc9d6;border-radius:6px;font:inherit;box-sizing:border-box;width:100%}.editgrid input.missing{background:#fffdf4;border-color:#e4c777}.editgrid .wide{grid-column:1/-1}.hint{font-size:13px;color:#657487}table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #ddd;padding:9px;text-align:left}#status{white-space:pre-wrap;color:#334}h2{margin-top:0}details{margin-top:12px}li{margin:5px 0}.muted{color:#657487}.warn{background:#fff7df;padding:12px;border-radius:6px}
+/* Anteprima organizzata secondo la prima pagina del modello cartaceo. */
+.contract-panel{max-width:960px;margin-left:auto;margin-right:auto;padding:0;overflow:hidden;border:1px solid #d9e0e8;border-radius:3px;box-shadow:0 5px 28px #142a4d15}
+.contract-top{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 30px;border-bottom:3px solid #1d3959;background:#fff}
+.company{font-size:21px;font-weight:800;letter-spacing:.02em;color:#203b5a}.company small{display:block;font-size:11px;line-height:1.6;font-weight:400;color:#526477;margin-top:5px;letter-spacing:0}
+.contract-heading{text-align:right}.contract-heading>span{font-size:10px;letter-spacing:.16em;color:#708298;font-weight:700}.contract-heading h2{font-size:22px;margin:4px 0 8px;color:#203b5a}.offer-reference{font-size:12px;color:#526477}
+.contract-instruction{padding:16px 30px 0;margin:0}.contract-fields{padding:10px 30px 16px}
+.contract-section{border-top:1px solid #e2e7ee;padding:14px 30px}.contract-section h3,.form-section h3{font-size:12px;letter-spacing:.075em;color:#203b5a;margin:0 0 12px;font-weight:800}
+.form-section{border-top:1px solid #d9e1e9;padding:18px 0 14px}.form-section:first-child{border-top:0}.form-section h3{border-left:4px solid #1d517f;padding-left:10px}
+.form-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px 14px}
+.form-grid label{display:flex;flex-direction:column;font-size:12px;font-weight:650;color:#405269;min-width:0}
+.form-grid label.span2{grid-column:span 2}.form-grid label.span3{grid-column:span 3}.form-grid label.span4{grid-column:span 4}.form-grid label.span6{grid-column:span 6}
+.form-grid input,.form-grid select,.form-grid textarea{margin:5px 0 0;padding:9px 10px;border:1px solid #cbd4df;border-radius:4px;font:14px system-ui,Arial;color:#1c293b;width:100%;box-sizing:border-box;background:white}
+.form-grid input.missing,.form-grid select.missing,.form-grid textarea.missing{background:#fffaf0;border-color:#dcb976}.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{outline:2px solid #9bbce4;outline-offset:0}
+.contract-action{padding:20px 30px 24px;background:#f5f8fc;border-top:1px solid #dce4ee;text-align:center}.contract-action button{font-size:16px;font-weight:700;padding:13px 35px;margin:0;background:#15549a}.contract-action p{margin:9px 0 0}
+#extras{font-size:13px;line-height:1.45}#extras ul{padding-left:22px}#extras li{overflow-wrap:anywhere}
+@media(max-width:650px){.contract-top{padding:18px;display:block}.contract-heading{text-align:left;margin-top:18px}.contract-fields,.contract-section,.contract-action{padding-left:16px;padding-right:16px}.contract-instruction{padding-left:16px;padding-right:16px}.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid label.span2,.form-grid label.span3,.form-grid label.span4,.form-grid label.span6{grid-column:span 2}.company{font-size:18px}}
+
+/* Impaginazione fedele alla prima pagina del modulo SOCOM: carta, bande laterali e righe. */
+body{background:#e9edf1;color:#222;font-family:Arial,Helvetica,sans-serif}
+.contract-panel{max-width:1060px;border:1px solid #bfc5cc;border-radius:0;background:white;box-shadow:0 4px 22px #00000012}
+.contract-top{border-bottom:1px solid #b6b6b6;padding:24px 36px 16px;align-items:flex-start}
+.company{font-size:16px;color:#1b1b1b;letter-spacing:0;font-weight:700}
+.company small{font-size:10px;color:#333;line-height:1.5}
+.contract-heading>span{font-size:11px;color:#222;letter-spacing:.03em}
+.contract-heading h2{font-size:16px;font-weight:700;color:#222}
+.contract-instruction{padding:9px 36px 0;font-size:11px}
+.contract-fields{padding:8px 0 0}
+.form-section{position:relative;display:grid;grid-template-columns:118px minmax(0,1fr);gap:0;border-top:1px solid #c8c8c8;padding:0;min-height:76px}
+.form-section:first-child{border-top:1px solid #c8c8c8}
+.form-section h3{border:0;border-right:1px solid #c8c8c8;margin:0;padding:16px 10px 10px 12px;font-size:11px;line-height:1.35;letter-spacing:.015em;color:#292929;font-weight:700;background:#f5f5f5;overflow-wrap:anywhere}
+.form-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:11px 13px;padding:13px 19px 15px}
+.form-grid label{font-size:10px;font-weight:400;color:#424242;letter-spacing:0}
+.form-grid input,.form-grid select,.form-grid textarea{border:0;border-bottom:1px solid #9fa4a9;border-radius:0;padding:5px 2px 4px;margin:3px 0 0;background:transparent;font-size:13px;color:#161616;min-height:27px}
+.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{outline:0;border-bottom:2px solid #2461a0;background:#f7faff}
+.form-grid input.missing,.form-grid select.missing,.form-grid textarea.missing{background:#fff9e8;border-bottom:1px solid #c9a65d}
+.contract-section{display:grid;grid-template-columns:118px minmax(0,1fr);gap:0;border-top:1px solid #c8c8c8;padding:0}
+.contract-section h3{border-right:1px solid #c8c8c8;background:#f5f5f5;margin:0;padding:16px 10px 10px 12px;color:#292929;letter-spacing:.015em;font-size:11px}
+.contract-section .contract-extras-body{padding:12px 19px}
+.contract-section .hint{font-size:11px;margin:0 0 8px}
+.contract-action{background:white;border-top:1px solid #bcbcbc}
+.contract-action button{background:#15549a}
+@media(max-width:650px){.contract-top{padding:16px}.contract-instruction{padding-left:16px;padding-right:16px}.form-section,.contract-section{grid-template-columns:1fr}.form-section h3,.contract-section h3{border-right:0;border-bottom:1px solid #ddd;padding:9px 14px;background:#f4f4f4}.form-grid{padding:12px 14px}.contract-section .contract-extras-body{padding:12px 14px}}
+
+/* Optional compatti, leggibili e contenuti nella colonna del contratto. */
+.extras-section .contract-extras-body{min-width:0;width:100%;box-sizing:border-box}
+.extras-details{margin:7px 0 0;border:1px solid #d7dce2;background:#fff}
+.extras-details>summary{cursor:pointer;padding:10px 12px;font-size:12px;font-weight:700;color:#233e59;background:#f6f8fa;list-style-position:inside}
+.extras-details[open]>summary{border-bottom:1px solid #d7dce2}
+#extras{max-height:340px;overflow-y:auto;overflow-x:hidden;font-size:12px;line-height:1.35}
+.extras-subhead{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:#f3f4f5;padding:8px 12px;border-bottom:1px solid #e3e5e8}
+.extras-line{display:grid;grid-template-columns:95px minmax(0,1fr);gap:12px;padding:7px 12px;border-bottom:1px solid #ededed;align-items:start}
+.extras-line:last-child{border-bottom:0}
+.extras-code{font-weight:700;color:#43566a;font-size:11px;overflow-wrap:anywhere}
+.extras-line>span:last-child{min-width:0;overflow-wrap:anywhere}
+.extras-muted,.extras-empty{color:#68788a}.extras-empty{padding:9px 12px}
+@media(max-width:650px){.extras-line{grid-template-columns:74px minmax(0,1fr);gap:8px;padding:8px 10px}}
+</style></head><body><header><h2>Contratti DealUp</h2><a style="color:white" href="app.html">← Torna allo stock</a></header><main><section class="panel"><h2>Offerte sul tuo Chrome</h2><p>Le offerte sono conservate nell'estensione del tuo browser, non su GitHub.</p><button id="refresh">Aggiorna offerte</button><label class="btn" for="file">Importa JSON dal PC</label><input id="file" type="file" accept=".json,application/json" hidden><div id="status">In attesa...</div><div id="offers"></div></section><section class="panel contract-panel" id="detail" hidden>
+<div class="contract-top"><div class="company">SOCOM NUOVA SRL<small>Via Argine, 504 · 80147 Napoli<br>Tel. 0812588111 · comunicazioni@socom-nuova.com</small></div><div class="contract-heading"><span>PROPOSTA DI ORDINE</span><h2>Contratto di vendita</h2><div id="summary"></div></div></div>
+<p class="hint contract-instruction">Controlla e completa i campi. Quelli evidenziati sono ancora vuoti; i dati inseriti saranno riportati nel contratto.</p>
+<div id="editfields" class="contract-fields"></div>
+<section class="contract-section extras-section"><h3>OPTIONAL</h3><div class="contract-extras-body"><p class="hint">Dotazioni e configurazione acquisite da DealUp.</p><details class="extras-details"><summary id="extras-summary">Visualizza la configurazione</summary><div id="extras"></div></details></div></section>
+<div class="contract-action"><button id="bundle">Genera contratto</button><p class="hint">Genera il PDF compilabile e i file per il gestionale. Verifica il contratto prima della firma.</p></div>
+</section></main><script>
+if(sessionStorage.getItem('isAuthorized')!=='true'){location.replace('index.html');}
+let selected=null;let seq=0;const pending=new Map();const status=document.getElementById('status');
+window.addEventListener('message',e=>{if(e.source!==window||e.origin!==location.origin||e.data?.channel!=='DEALUP_PORTAL_RESPONSE')return;const p=pending.get(e.data.requestId);if(p){pending.delete(e.data.requestId);p(e.data.result);}});
+function call(type,id){return new Promise((resolve,reject)=>{const requestId='r'+(++seq);pending.set(requestId,resolve);window.postMessage({channel:'DEALUP_PORTAL_REQUEST',type,id,requestId},location.origin);setTimeout(()=>{if(pending.has(requestId)){pending.delete(requestId);reject(new Error('Estensione non rilevata. Carica la nuova estensione e aggiorna la pagina.'));}},2500);});}
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const list=document.getElementById('offers');
+async function refresh(){status.textContent='Lettura offerte...';try{const r=await call('LIST_OFFERS');if(r.error)throw Error(r.error);const items=r.offers||[];status.textContent=items.length?items.length+' offerte disponibili in questo Chrome.':'Nessuna offerta acquisita. Apri DealUp e acquisisci una nuova offerta con l’estensione.';list.replaceChildren();for(const item of items){const b=document.createElement('button');b.textContent=(item.numero||'Offerta')+' — '+(item.modello||'')+' — '+(item.cliente||'');b.onclick=async()=>{try{const r=await call('GET_OFFER',item.id);if(r.error)throw Error(r.error);show(r.offer.data);}catch(e){status.textContent=e.message;}};list.append(b);}}catch(e){status.textContent=e.message+' Puoi comunque importare un JSON dal PC.';}}
+function show(data){if(!data?.welcome||!data?.detailsPrintList)throw Error('JSON non riconosciuto come offerta DealUp');selected=data;window.dealupPreviewInit(data);const w=data.welcome;const c=w.contatto||{};document.getElementById('detail').hidden=false;const fields=[['Numero offerta',w.numeroOfferta],['Cliente',c.nome],['P.IVA',c.vatValue],['Modello',w.modello],['Quantità',w.quantita],['Venditore',w.responsabile],['Totale ordine dichiarato',w.prezzoTotaleDaPagare]];document.getElementById('summary').innerHTML='<div class="offer-reference">Offerta '+esc(w.numeroOfferta||'—')+' · '+esc(w.modello||'')+'</div>';const packs=data.detailsPrintList.pack?.group||[];const chapters=data.detailsPrintList.fcsuserselected?.fcsCar?.capitoloList||[];const opts=chapters.flatMap(x=>(x.sottoCapitoloList||[]).flatMap(y=>y.caratteristiche||[]));document.getElementById('extras-summary').textContent='Visualizza optional e pacchetti ('+(packs.length+opts.length)+')';document.getElementById('extras').innerHTML='<div class="extras-subhead">Pacchetti ('+packs.length+')</div>'+ (packs.length?packs.map(x=>'<div class="extras-line"><span class="extras-code">PACCHETTO</span><span>'+esc(x.group)+' <span class="extras-muted">('+(x.carList||[]).length+' elementi)</span></span></div>').join(''):'<div class="extras-empty">Nessun pacchetto</div>')+'<div class="extras-subhead">Caratteristiche selezionate ('+opts.length+')</div>'+opts.map(x=>'<div class="extras-line"><span class="extras-code">'+esc(x.codice||'—')+'</span><span>'+esc(x.descrizioneCustom||x.valore||'—')+'</span></div>').join('');document.getElementById('detail').scrollIntoView({behavior:'smooth'});}
+document.getElementById('refresh').onclick=refresh;document.getElementById('file').onchange=async e=>{try{const file=e.target.files[0];if(file)show(JSON.parse(await file.text()));}catch(err){status.textContent='Errore importazione: '+err.message;}};refresh();
+</script><script src="dealup_export.js"></script><script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script><script src="contratto_web.js"></script></body></html>
