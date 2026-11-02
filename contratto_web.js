@@ -21,7 +21,32 @@ function opts(data){
       }
   return [...new Set(out)];
 }
-function optionLines(options,number,font){const widths=[470,505,315],lines=['','',''];for(const value of options){let placed=false;for(let i=0;i<3;i++){const candidate=lines[i]?lines[i]+'; '+value:value;if(font.widthOfTextAtSize(candidate,7.5)<=widths[i]){lines[i]=candidate;placed=true;break}}if(!placed)return ['Optional come da offerta DealUp '+number+' allegata','','']}return lines}
+function optionLines(options,number,font){
+  // I pacchetti hanno priorità assoluta: non devono sparire se gli optional sono numerosi.
+  const widths=[470,505,315], lines=['','',''];
+  const packs=options.filter(v=>v.startsWith('PACCHETTO '));
+  const others=options.filter(v=>!v.startsWith('PACCHETTO '));
+  let omitted=0;
+  function add(value){
+    for(let i=0;i<3;i++){
+      const candidate=lines[i]?lines[i]+'; '+value:value;
+      if(font.widthOfTextAtSize(candidate,7.5)<=widths[i]){lines[i]=candidate;return true;}
+    }
+    return false;
+  }
+  for(const pack of packs)if(!add(pack))throw Error('Troppi pacchetti per i campi Optional del contratto');
+  for(const value of others)if(!add(value))omitted++;
+  if(omitted){
+    const notice='Altri optional: vedere offerta DealUp '+number;
+    if(!add(notice)){
+      // Riserva spazio all'avviso senza cancellare i pacchetti già inseriti.
+      for(let i=2;i>=0;i--){
+        if(lines[i] && !lines[i].includes('PACCHETTO ')){lines[i]=notice;break;}
+      }
+    }
+  }
+  return lines;
+}
 function extraNote(data){
   const costs=Array.isArray(data.pricing?.otherCosts)?data.pricing.otherCosts:[];
   const rows=[];
