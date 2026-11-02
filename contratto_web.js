@@ -48,5 +48,14 @@ for(const [name,value] of Object.entries(values)){const field=form.getTextField(
 const extras=Object.fromEntries((calc.vehicleExtras||[]).filter(v=>v&&typeof v==='object').map(v=>[v.itemId,v]));if((parseMoney(extras.transport?.customerFinalPrice)||0)>0)form.getCheckBox('Check Box2').check();if((parseMoney(extras.registration?.customerFinalPrice)||0)>0)form.getCheckBox('Check Box3').check();
 const bytes=await doc.save();const blob=new Blob([bytes],{type:'application/pdf'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='Contratto_'+number.replace(/[^\w-]/g,'_')+'.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
 }
-window.dealupCreateContract=createContract;
+window.dealupCreateContract=async function(data){
+  try{
+    const result=await createContract(data);
+    window.dealupLog?.('Generazione PDF contratto - download avviato','OK',data);
+    return result;
+  }catch(error){
+    window.dealupLog?.('Generazione PDF contratto','ERRORE',data,error?.message||String(error));
+    throw error;
+  }
+};
 })();

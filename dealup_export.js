@@ -87,5 +87,20 @@ window.dealupPreviewInit=init;window.dealupPreparedOffer=prepared;
 
 
 
-document.getElementById('bundle').onclick=async()=>{const b=document.getElementById('bundle');b.disabled=true;try{const d=prepared();await window.dealupCreateContract(d);save(name(d)+'_riepilogo.csv',summary(d),'text/csv;charset=utf-8');save(name(d)+'_dettaglio.csv',details(d),'text/csv;charset=utf-8');save(name(d)+'_completo.json',full(d),'application/json;charset=utf-8');document.getElementById('status').textContent='File generati. Se ne manca qualcuno, abilita i download multipli per questa pagina in Chrome.'}catch(e){document.getElementById('status').textContent='Errore esportazione: '+e.message}finally{b.disabled=false}};
+document.getElementById('bundle').onclick=async()=>{
+  const b=document.getElementById('bundle');b.disabled=true;
+  let d=null;
+  try{
+    d=prepared();
+    await window.dealupCreateContract(d);
+    save(name(d)+'_riepilogo.csv',summary(d),'text/csv;charset=utf-8');
+    save(name(d)+'_dettaglio.csv',details(d),'text/csv;charset=utf-8');
+    save(name(d)+'_completo.json',full(d),'application/json;charset=utf-8');
+    window.dealupLog?.('Esportazione CSV e JSON - download avviato','OK',d);
+    document.getElementById('status').textContent='File generati. Se ne manca qualcuno, abilita i download multipli per questa pagina in Chrome.';
+  }catch(e){
+    document.getElementById('status').textContent='Errore esportazione: '+e.message;
+    window.dealupLog?.('Procedura esportazione','ERRORE',d,e.message);
+  }finally{b.disabled=false;}
+};
 })();
