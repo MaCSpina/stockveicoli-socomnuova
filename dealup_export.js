@@ -93,6 +93,8 @@ document.getElementById('bundle').onclick=async()=>{
   try{
     d=prepared();
     await window.dealupCreateContract(d);
+    window.dealupLog?.('Generazione PDF contratto - download avviato','OK',d);
+    try{await window.dealupMarkGenerated?.(d);}catch(markError){console.warn('DealUp: PDF avviato ma stato non aggiornato',markError);}
     save(name(d)+'_riepilogo.csv',summary(d),'text/csv;charset=utf-8');
     save(name(d)+'_dettaglio.csv',details(d),'text/csv;charset=utf-8');
     save(name(d)+'_completo.json',full(d),'application/json;charset=utf-8');
@@ -100,7 +102,7 @@ document.getElementById('bundle').onclick=async()=>{
     document.getElementById('status').textContent='File generati. Se ne manca qualcuno, abilita i download multipli per questa pagina in Chrome.';
   }catch(e){
     document.getElementById('status').textContent='Errore esportazione: '+e.message;
-    window.dealupLog?.('Procedura esportazione','ERRORE',d,e.message);
+    window.dealupLog?.('Generazione contratto / esportazione','ERRORE',d,e.message);
   }finally{b.disabled=false;}
 };
 })();
