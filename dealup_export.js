@@ -94,12 +94,13 @@ document.getElementById('bundle').onclick=async()=>{
     d=prepared();
     await window.dealupCreateContract(d);
     window.dealupLog?.('Generazione PDF contratto - download avviato','OK',d);
-    try{await window.dealupMarkGenerated?.(d);}catch(markError){console.warn('DealUp: PDF avviato ma stato non aggiornato',markError);}
+    let statoAggiornato=false;
+    try{if(typeof window.dealupMarkGenerated!=='function')throw Error('Funzione aggiornamento stato non disponibile');await window.dealupMarkGenerated(d);statoAggiornato=true;}catch(markError){console.error('DealUp: PDF generato, ma stato non aggiornato',markError);alert('Il PDF è stato generato, ma lo stato dell’offerta NON è stato aggiornato: '+markError.message);}
     save(name(d)+'_riepilogo.csv',summary(d),'text/csv;charset=utf-8');
     save(name(d)+'_dettaglio.csv',details(d),'text/csv;charset=utf-8');
     save(name(d)+'_completo.json',full(d),'application/json;charset=utf-8');
     window.dealupLog?.('Esportazione CSV e JSON - download avviato','OK',d);
-    document.getElementById('status').textContent='File generati. Se ne manca qualcuno, abilita i download multipli per questa pagina in Chrome.';
+    document.getElementById('status').textContent=(statoAggiornato?'Contratto generato e stato aggiornato.':'PDF generato, ma stato NON aggiornato: controlla l’avviso e la Console.')+' Se manca qualche file, abilita i download multipli per questa pagina in Chrome.';
   }catch(e){
     document.getElementById('status').textContent='Errore esportazione: '+e.message;
     window.dealupLog?.('Generazione contratto / esportazione','ERRORE',d,e.message);
