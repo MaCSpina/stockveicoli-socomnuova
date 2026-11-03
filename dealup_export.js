@@ -87,6 +87,44 @@ window.dealupPreviewInit=init;window.dealupPreparedOffer=prepared;
 
 
 
+// Chiave temporanea di test: richiesta a ogni nuova sessione della pagina.
+// NON inserire la chiave nel sorgente né pubblicare questo flusso per gli agenti.
+const DEALUP_UPLOAD_URL='https://dealup-upload.massy-spina.workers.dev/upload';
+let temporaryUploadKey='';
+async function uploadArchive(d){
+  if(!temporaryUploadKey){
+    const entered=window.prompt('Chiave di caricamento DealUp (solo test controllato):');
+    if(!entered)throw Error('Caricamento annullato: chiave non inserita');
+    temporaryUploadKey=entered;
+  }
+  const payload={
+    offerId:name(d),
+    files:{
+      'riepilogo.csv':summary(d),
+      'dettaglio.csv':details(d),
+      'offerta.json':full(d)
+    }
+  };
+  let response;
+  try{
+    response=await fetch(DEALUP_UPLOAD_URL,{
+      method:'POST',
+      mode:'cors',
+      cache:'no-store',
+      headers:{'Content-Type':'application/json;charset=utf-8','X-Upload-Key':temporaryUploadKey},
+      body:JSON.stringify(payload)
+    });
+  }catch(e){throw Error('Worker non raggiungibile: '+e.message)}
+  let result;
+  try{result=await response.json()}catch{throw Error('Risposta Worker non valida (HTTP '+response.status+')')}
+  if(!response.ok||result?.ok!==true){
+    if(response.status===401)temporaryUploadKey='';
+    throw Error('Archivio GitHub non salvato: '+(result?.error||result?.errore||'HTTP '+response.status));
+  }
+  if(!Array.isArray(result.files)||result.files.length!==3)throw Error('Conferma GitHub incompleta');
+  return result;
+}
+
 document.getElementById('bundle').onclick=async()=>{
   const b=document.getElementById('bundle');b.disabled=true;
   let d=null;
@@ -94,16 +132,29 @@ document.getElementById('bundle').onclick=async()=>{
     d=prepared();
     await window.dealupCreateContract(d);
     window.dealupLog?.('Generazione PDF contratto - download avviato','OK',d);
+    document.getElementById('status').textContent='PDF avviato. Invio archivio a GitHub in corso...';
+    let uploaded;
+    try{
+      uploaded=await uploadArchive(d);
+      window.dealupLog?.('Archivio CSV e JSON su GitHub confermato','OK',d);
+    }catch(uploadError){
+      console.error('DealUp: archiviazione fallita',uploadError);
+      window.dealupLog?.('Archivio CSV e JSON su GitHub','ERRORE',d,uploadError.message);
+      document.getElementById('status').textContent='PDF generato, ma archiviazione NON riuscita: '+uploadError.message+'. Riprova dal pulsante Genera contratto.';
+      return;
+    }
     let statoAggiornato=false;
-    try{if(typeof window.dealupMarkGenerated!=='function')throw Error('Funzione aggiornamento stato non disponibile');await window.dealupMarkGenerated(d);statoAggiornato=true;}catch(markError){console.error('DealUp: PDF generato, ma stato non aggiornato',markError);alert('Il PDF è stato generato, ma lo stato dell’offerta NON è stato aggiornato: '+markError.message);}
-    save(name(d)+'_riepilogo.csv',summary(d),'text/csv;charset=utf-8');
-    save(name(d)+'_dettaglio.csv',details(d),'text/csv;charset=utf-8');
-    save(name(d)+'_completo.json',full(d),'application/json;charset=utf-8');
-    window.dealupLog?.('Esportazione CSV e JSON - download avviato','OK',d);
-    document.getElementById('status').textContent=(statoAggiornato?'Contratto generato e stato aggiornato.':'PDF generato, ma stato NON aggiornato: controlla l’avviso e la Console.')+' Se manca qualche file, abilita i download multipli per questa pagina in Chrome.';
+    try{
+      if(typeof window.dealupMarkGenerated!=='function')throw Error('Funzione aggiornamento stato non disponibile');
+      await window.dealupMarkGenerated(d);statoAggiornato=true;
+    }catch(markError){
+      console.error('DealUp: archivio salvato, ma stato non aggiornato',markError);
+      window.dealupLog?.('Aggiornamento stato contratto','ERRORE',d,markError.message);
+    }
+    document.getElementById('status').textContent='PDF scaricato; CSV e JSON archiviati su GitHub (ID: '+uploaded.uploadId+'). '+(statoAggiornato?'Stato aggiornato.':'ATTENZIONE: stato offerta non aggiornato.');
   }catch(e){
-    document.getElementById('status').textContent='Errore esportazione: '+e.message;
-    window.dealupLog?.('Generazione contratto / esportazione','ERRORE',d,e.message);
+    document.getElementById('status').textContent='Errore generazione contratto: '+e.message;
+    window.dealupLog?.('Generazione contratto','ERRORE',d,e.message);
   }finally{b.disabled=false;}
 };
 })();
