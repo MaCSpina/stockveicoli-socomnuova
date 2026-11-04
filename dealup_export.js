@@ -80,7 +80,7 @@ function csv(rows){return '\ufeff'+rows.map(row=>row.map(csvEscape).join(';')).j
 function flat(obj,prefix='',out={},depth=0){if(depth>18)return out;if(obj===null||typeof obj!=='object'){out[prefix]=obj??'';return out}if(Array.isArray(obj)){obj.forEach((v,i)=>flat(v,prefix+'['+i+']',out,depth+1));return out}for(const [k,v] of Object.entries(obj)){if(k==='__contractOverrides'||k==='__contractNotes')continue;flat(v,prefix?prefix+'.'+k:k,out,depth+1)}return out}
 function summary(d){const w=d.welcome||{},c=w.contatto||{},p=d.pricing||{};const base={numero_offerta:w.numeroOfferta,numero_opportunita:w.numeroOpportunita,numero_ordine:w.numeroOrdine,cliente:c.nome,partita_iva:c.vatValue,indirizzo:c.indirizzo,citta:c.citta,cap:c.cap,telefono:c.telefono,cellulare:c.altroTelefono,email:c.email,modello:w.modello,passo:passoValue(d),colore:sectionValue(d.detailsPrintList?.colore),quantita:w.quantita,venditore:w.responsabile,data_offerta:w.today,prezzo_totale_netto:p.prezzoTotaleDaPagareNetValue,prezzo_totale_lordo:p.prezzoTotaleDaPagareGrossValue,note_aggiuntive:d.__contractNotes};for(const [k,v] of Object.entries(d.__contractOverrides||{}))base['contratto_'+k]=v;return csv([Object.keys(base),Object.values(base)])}
 function details(d){const rows=[['numero_offerta','tipo','gruppo','codice','descrizione','prezzo_lordo','prezzo_netto','stato']];const num=d.welcome?.numeroOfferta||'';const dp=d.detailsPrintList||{};for(const group of dp.pack?.group||[])for(const x of group.carList||[])rows.push([num,'pacchetto',group.groupname||group.group||'',x.codiceUnivoco||x.codice||'',x.descrizioneCustom||x.valore||'',x.prezzoLordo||'',x.prezzoNetto||'',x.status||'']);for(const chapter of dp.fcsuserselected?.fcsCar?.capitoloList||[])for(const sub of chapter.sottoCapitoloList||[])for(const x of sub.caratteristiche||[])rows.push([num,'optional',chapter.descrizione||'',x.codiceUnivoco||x.codice||'',x.descrizioneCustom||x.valore||'',x.prezzoLordo||'',x.prezzoNetto||'',x.status||'']);for(const x of d.pricing?.otherCosts||[])rows.push([num,'lavorazione',x.name||'',x.id||'',x.descrizione||'',x.listPrice??'',x.customerFinalPrice??'',x.status||'']);if(d.__contractNotes)rows.push([num,'nota_venditore','','',d.__contractNotes,'','','']);return csv(rows)}
-function full(d){return JSON.stringify({schema:'dealup-export-v1',exportedAt:new Date().toISOString(),offertaOriginale:original,contratto:{campi:d.__contractOverrides,noteAggiuntive:d.__contractNotes}})}
+function full(d){const w=d.welcome||{};return JSON.stringify({schema:'dealup-contract-min-v2',exportedAt:new Date().toISOString(),numeroOfferta:w.numeroOfferta||'',numeroOpportunita:w.numeroOpportunita||'',cliente:w.contatto?.nome||'',modello:w.modello||'',venditore:w.responsabile||'',contratto:{campi:d.__contractOverrides||{},noteAggiuntive:d.__contractNotes||''}})}
 function save(name,content,mime){const blob=new Blob([content],{type:mime});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),15000)}
 function name(d){return String(d.welcome?.numeroOfferta||'dealup').replace(/[^a-zA-Z0-9_-]/g,'_')}
 window.dealupPreviewInit=init;window.dealupPreparedOffer=prepared;
@@ -101,8 +101,7 @@ async function uploadArchive(d){
     offerId:name(d),
     files:{
       'riepilogo.csv':summary(d),
-      'dettaglio.csv':details(d),
-      'offerta.json':full(d)
+      'dettaglio.csv':details(d)
     }
   };
   let response;
@@ -121,7 +120,7 @@ async function uploadArchive(d){
     if(response.status===401)temporaryUploadKey='';
     throw Error('Archivio GitHub non salvato: '+(result?.error||result?.errore||'HTTP '+response.status));
   }
-  if(!Array.isArray(result.files)||result.files.length!==3)throw Error('Conferma GitHub incompleta');
+  if(!Array.isArray(result.files)||result.files.length!==2)throw Error('Conferma GitHub incompleta');
   return result;
 }
 
@@ -136,10 +135,10 @@ document.getElementById('bundle').onclick=async()=>{
     let uploaded;
     try{
       uploaded=await uploadArchive(d);
-      window.dealupLog?.('Archivio CSV e JSON su GitHub confermato','OK',d);
+      window.dealupLog?.('Archivio CSV su GitHub confermato','OK',d);
     }catch(uploadError){
       console.error('DealUp: archiviazione fallita',uploadError);
-      window.dealupLog?.('Archivio CSV e JSON su GitHub','ERRORE',d,uploadError.message);
+      window.dealupLog?.('Archivio CSV su GitHub','ERRORE',d,uploadError.message);
       document.getElementById('status').textContent='PDF generato, ma archiviazione NON riuscita: '+uploadError.message+'. Riprova dal pulsante Genera contratto.';
       return;
     }
@@ -151,7 +150,7 @@ document.getElementById('bundle').onclick=async()=>{
       console.error('DealUp: archivio salvato, ma stato non aggiornato',markError);
       window.dealupLog?.('Aggiornamento stato contratto','ERRORE',d,markError.message);
     }
-    document.getElementById('status').textContent='PDF scaricato; CSV e JSON archiviati su GitHub (ID: '+uploaded.uploadId+'). '+(statoAggiornato?'Stato aggiornato.':'ATTENZIONE: stato offerta non aggiornato.');
+    document.getElementById('status').textContent='PDF scaricato; CSV archiviati su GitHub (ID: '+uploaded.uploadId+'). '+(statoAggiornato?'Stato aggiornato.':'ATTENZIONE: stato offerta non aggiornato.');
   }catch(e){
     document.getElementById('status').textContent='Errore generazione contratto: '+e.message;
     window.dealupLog?.('Generazione contratto','ERRORE',d,e.message);
