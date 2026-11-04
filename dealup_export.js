@@ -137,7 +137,7 @@ document.getElementById('bundle').onclick=async()=>{
       console.error('DealUp: archivio salvato, ma stato non aggiornato',markError);
       window.dealupLog?.('Aggiornamento stato contratto','ERRORE',d,markError.message);
     }
-    document.getElementById('status').textContent='PDF scaricato; CSV archiviati su GitHub (ID: '+uploaded.uploadId+'). '+(statoAggiornato?'Stato aggiornato.':'ATTENZIONE: stato offerta non aggiornato.');
+    document.getElementById('status').textContent='PDF scaricato; CSV archiviati (ID: '+uploaded.uploadId+'). '+(statoAggiornato?'Stato aggiornato.':'ATTENZIONE: stato offerta non aggiornato.');
   }catch(e){
     document.getElementById('status').textContent='Errore generazione contratto: '+e.message;
     window.dealupLog?.('Generazione contratto','ERRORE',d,e.message);
