@@ -6,8 +6,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accesso Riservato - Stock Veicoli</title>
-    <!-- Libreria SHA-256 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body {
             margin: 0; padding: 0; background-color: #f4f6f9;
@@ -57,38 +55,33 @@
 
         // Se l'utente ha già una sessione attiva, entra direttamente
         window.addEventListener("DOMContentLoaded", () => {
-            if (sessionStorage.getItem("isAuthorized") === "true") {
+            if (sessionStorage.getItem("isAuthorized") === "true" && sessionStorage.getItem("dealupSessionToken")) {
                 window.location.href = "app.html";
             }
         });
 
-        function calcolaSHA256(testo) {
-            return CryptoJS.SHA256(testo).toString(CryptoJS.enc.Hex);
-        }
 
         async function verificaLogin(event) {
             event.preventDefault();
 
             const utenteInserito = document.getElementById("user-input").value.trim();
             const pinInserito = document.getElementById("pin-input").value.trim();
-            const hashInserito = calcolaSHA256(pinInserito);
-            const errorMsg = document.getElementById("error-msg");
+                const errorMsg = document.getElementById("error-msg");
 
             errorMsg.style.display = "none";
 
             try {
-                // 1. Carica le credenziali da users.json
-                const resUsers = await fetch("users.json?nocache=" + Date.now());
-                if (!resUsers.ok) throw new Error("Errore nel caricamento utenti");
-                const users = await resUsers.json();
-
-                let utenteValido = false;
-                for (const [username, pinHash] of Object.entries(users)) {
-                    if (username.toLowerCase() === utenteInserito.toLowerCase() && pinHash.toLowerCase() === hashInserito.toLowerCase()) {
-                        utenteValido = username;
-                        break;
-                    }
-                }
+                // Verifica credenziali sul Worker, senza esporre users.json.
+                const loginResponse = await fetch('https://dealup-upload.massy-spina.workers.dev/login', {
+                    method: 'POST',
+                    mode: 'cors',
+                    cache: 'no-store',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: utenteInserito, password: pinInserito })
+                });
+                const loginResult = await loginResponse.json();
+                const utenteValido = loginResponse.ok && loginResult.ok === true ? loginResult.username : false;
+                if (utenteValido) sessionStorage.setItem('dealupSessionToken', loginResult.token);
 
                 if (utenteValido) {
                     // 2. Carica la configurazione da config.json per estrarre il Ruolo

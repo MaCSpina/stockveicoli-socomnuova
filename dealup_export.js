@@ -87,37 +87,24 @@ window.dealupPreviewInit=init;window.dealupPreparedOffer=prepared;
 
 
 
-// Chiave temporanea di test: richiesta a ogni nuova sessione della pagina.
-// NON inserire la chiave nel sorgente né pubblicare questo flusso per gli agenti.
+// Sessione autenticata dal Worker: nessuna chiave richiesta all'agente.
 const DEALUP_UPLOAD_URL='https://dealup-upload.massy-spina.workers.dev/upload';
-let temporaryUploadKey='';
 async function uploadArchive(d){
-  if(!temporaryUploadKey){
-    const entered=window.prompt('Chiave di caricamento DealUp (solo test controllato):');
-    if(!entered)throw Error('Caricamento annullato: chiave non inserita');
-    temporaryUploadKey=entered;
-  }
-  const payload={
-    offerId:name(d),
-    files:{
-      'riepilogo.csv':summary(d),
-      'dettaglio.csv':details(d)
-    }
-  };
+  const token=sessionStorage.getItem('dealupSessionToken');
+  if(!token)throw Error('Sessione DealUp assente: esci e rientra dal portale');
+  const payload={offerId:name(d),files:{'riepilogo.csv':summary(d),'dettaglio.csv':details(d)}};
   let response;
   try{
     response=await fetch(DEALUP_UPLOAD_URL,{
-      method:'POST',
-      mode:'cors',
-      cache:'no-store',
-      headers:{'Content-Type':'application/json;charset=utf-8','X-Upload-Key':temporaryUploadKey},
+      method:'POST',mode:'cors',cache:'no-store',
+      headers:{'Content-Type':'application/json;charset=utf-8','Authorization':'Bearer '+token},
       body:JSON.stringify(payload)
     });
   }catch(e){throw Error('Worker non raggiungibile: '+e.message)}
   let result;
   try{result=await response.json()}catch{throw Error('Risposta Worker non valida (HTTP '+response.status+')')}
   if(!response.ok||result?.ok!==true){
-    if(response.status===401)temporaryUploadKey='';
+    if(response.status===401){sessionStorage.removeItem('dealupSessionToken');throw Error('Sessione scaduta: esci e rientra dal portale')}
     throw Error('Archivio GitHub non salvato: '+(result?.error||result?.errore||'HTTP '+response.status));
   }
   if(!Array.isArray(result.files)||result.files.length!==2)throw Error('Conferma GitHub incompleta');
