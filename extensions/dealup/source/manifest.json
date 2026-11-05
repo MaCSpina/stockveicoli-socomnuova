@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DealUp - Gestione Contratti",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Conferma offerta pronta, stati contratto, download JSON opzionale e download VAN.",
   "permissions": [
     "downloads",
