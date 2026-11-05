@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "DealUp - Gestione Contratti",
   "version": "0.7.2",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7ihGqP6v/qCnN+kxXchr+bRnYbNFP5WTpfRgzNBPrcq3gfRekQxONJwgjuWlEa487YInRxrqi/Pfmr21ttEornkBEj9F7MpfPytYY3SNqzUY2kPqH4+pKaSyy6ZczEU58pYGMeaQlUFbsSHuHPke8lif4aGedj5Z2DLe1Mk9zw2x7wAlJAVYF/9u0SG2qYjlpgKpsmktbdHYB3XaP4qQrGelITbkaKDZvUKo0HWmI1m5vofItuHtGpp6jcwzigMqvFsflYXTGWr/hGlXNmbK2OhId+Fh/IjtrxH5/kGXSfWKx61Uc/ZOcAu97DBjYeeH1kJpjxJWmQOOWUSxqRfpawIDAQAB",
   "description": "Conferma offerta pronta, stati contratto, download JSON opzionale e download VAN.",
   "permissions": [
     "downloads",
