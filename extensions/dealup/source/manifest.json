@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "DealUp - Gestione Contratti",
+  "version": "0.7.1",
+  "description": "Conferma offerta pronta, stati contratto, download JSON opzionale e download VAN.",
+  "permissions": [
+    "downloads",
+    "storage",
+    "activeTab",
+    "scripting",
+    "unlimitedStorage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "DealUp - Gestione Contratti"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://cpq.ivecogroup.com/*"
+      ],
+      "js": [
+        "relay.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://cpq.ivecogroup.com/*"
+      ],
+      "js": [
+        "intercept.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://stockveicoli.socomnuova.com/*",
+        "http://127.0.0.1/*",
+        "http://localhost/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://cpq.ivecogroup.com/*"
+      ],
+      "js": [
+        "confirm.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}
