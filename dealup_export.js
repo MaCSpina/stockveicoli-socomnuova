@@ -92,6 +92,26 @@ function summary(d) {
     const p = d.pricing || {};
     const overrides = d.__contractOverrides || {};
 
+    // Conserva lo stato delle caselle del PDF, usando la stessa regola
+    // adottata dal generatore del contratto originale.
+    const vehicleExtras = d.pricing?.printOutPriceCalculation?.vehicleExtras || [];
+    const extraById = Object.fromEntries(
+        vehicleExtras.filter(x => x && typeof x === 'object').map(x => [x.itemId, x])
+    );
+    function prezzoExtra(v) {
+        if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+        let str = String(v ?? '').replace(/[€\s]/g, '');
+        if (str.includes(',') && str.includes('.')) {
+            str = str.lastIndexOf(',') > str.lastIndexOf('.')
+                ? str.replace(/\./g, '').replace(',', '.')
+                : str.replace(/,/g, '');
+        } else if (str.includes(',')) str = str.replace(',', '.');
+        const n = Number(str);
+        return Number.isFinite(n) ? n : 0;
+    }
+    const trasportoSpuntato = prezzoExtra(extraById.transport?.customerFinalPrice) > 0;
+    const immatricolazioneSpuntata = prezzoExtra(extraById.registration?.customerFinalPrice) > 0;
+
     // Restituisce il valore definitivo utilizzato nel contratto.
     // Rispetta anche i campi svuotati intenzionalmente.
     function finale(campo, originale = '') {
@@ -138,7 +158,12 @@ function summary(d) {
         prezzo_totale_lordo: p.prezzoTotaleDaPagareGrossValue ?? '',
 
         // NOTE DEFINITIVE
-        note_aggiuntive: d.__contractNotes || ''
+        note_aggiuntive: d.__contractNotes || '',
+
+        // 1 = casella spuntata, 0 = casella non spuntata.
+        // Le colonne restano nel CSV anche quando le caselle sono vuote.
+        trasporto_spuntato: trasportoSpuntato ? '1' : '0',
+        immatricolazione_spuntata: immatricolazioneSpuntata ? '1' : '0'
     };
 
     // Conserva anche tutti i campi della maschera,
@@ -158,8 +183,6 @@ function full(d){const w=d.welcome||{};return JSON.stringify({schema:'dealup-con
 function save(name,content,mime){const blob=new Blob([content],{type:mime});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),15000)}
 function name(d){return String(d.welcome?.numeroOfferta||'dealup').replace(/[^a-zA-Z0-9_-]/g,'_')}
 window.dealupPreviewInit=init;window.dealupPreparedOffer=prepared;
-
-
 
 // Sessione autenticata dal Worker: nessuna chiave richiesta all'agente.
 const DEALUP_UPLOAD_URL='https://dealup-upload.massy-spina.workers.dev/upload';

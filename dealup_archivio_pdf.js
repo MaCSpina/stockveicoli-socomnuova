@@ -38,12 +38,18 @@ function reconstruct(summary,detail){
       costs.push({name:r.gruppo,descrizione:r.descrizione,abilitato:true,showItem:true});
     }
   }
-  const overrides={};
+   // Per gli archivi precedenti le colonne non esistono: non si inventano spunte.
+   // Nei nuovi CSV le caselle sono ripristinate tramite vehicleExtras.
+   const extras=[];
+   if(s.trasporto_spuntato==='1')extras.push({itemId:'transport',customerFinalPrice:1});
+   if(s.immatricolazione_spuntata==='1')extras.push({itemId:'registration',customerFinalPrice:1});
+   const overrides={};
   for(const [key,value] of Object.entries(s))if(key.startsWith('contratto_'))overrides[key.slice(9)]=value;
   const data={
     welcome:{numeroOfferta:s.numero_offerta,quantita:qty,modello:get('Modello','modello'),today:get('Napoli lì','data_offerta'),responsabile:get('Venditore','venditore'),contatto:{nome:get('Il cliente','cliente'),indirizzo:get('Sede Legale','indirizzo'),citta:get('Città','citta'),cap:get('CAP','cap'),vatValue:get('Partita IVA','partita_iva'),telefono:get('Telefono','telefono'),altroTelefono:get('Cellulare','cellulare'),email:get('Email','email')}},
     detailsPrintList:{fcp:{group:[{carList:[{idCaratteristica:'WB',descrizioneCustom:get('Passo','passo')}]}]},colore:{group:[{carList:[{descrizioneCustom:get('Colore','colore')}]}]},pack:{group:groups},fcsuserselected:{fcsCar:{capitoloList:optChapters}}},
-    pricing:{prezzoTotaleDaPagareNetValue:total,otherCosts:costs},
+     pricing:{prezzoTotaleDaPagareNetValue:total,otherCosts:costs,
+       printOutPriceCalculation:{vehicleExtras:extras}},
     __contractOverrides:overrides,__contractNotes:s.note_aggiuntive||'',__archivePreview:true
   };
   return data;
