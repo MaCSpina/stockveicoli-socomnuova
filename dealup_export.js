@@ -78,7 +78,81 @@ function prepared(){if(!original)throw Error('Seleziona un’offerta');const d=s
 function csvEscape(v){let s=String(v??'');if(/^[\s]*[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}
 function csv(rows){return '\ufeff'+rows.map(row=>row.map(csvEscape).join(';')).join('\r\n')+'\r\n'}
 function flat(obj,prefix='',out={},depth=0){if(depth>18)return out;if(obj===null||typeof obj!=='object'){out[prefix]=obj??'';return out}if(Array.isArray(obj)){obj.forEach((v,i)=>flat(v,prefix+'['+i+']',out,depth+1));return out}for(const [k,v] of Object.entries(obj)){if(k==='__contractOverrides'||k==='__contractNotes')continue;flat(v,prefix?prefix+'.'+k:k,out,depth+1)}return out}
-function summary(d){const w=d.welcome||{},c=w.contatto||{},p=d.pricing||{};const base={numero_offerta:w.numeroOfferta,numero_opportunita:w.numeroOpportunita,numero_ordine:w.numeroOrdine,cliente:c.nome,partita_iva:c.vatValue,indirizzo:c.indirizzo,citta:c.citta,cap:c.cap,telefono:c.telefono,cellulare:c.altroTelefono,email:c.email,modello:w.modello,van:d.van||'',passo:passoValue(d),colore:sectionValue(d.detailsPrintList?.colore),quantita:w.quantita,venditore:w.responsabile,data_offerta:w.today,prezzo_totale_netto:p.prezzoTotaleDaPagareNetValue,prezzo_totale_lordo:p.prezzoTotaleDaPagareGrossValue,note_aggiuntive:d.__contractNotes};for(const [k,v] of Object.entries(d.__contractOverrides||{}))base['contratto_'+k]=v;return csv([Object.keys(base),Object.values(base)])}
+
+function valoreFinale(d, campo, originale) {
+    const modificato = d.__contractOverrides?.[campo];
+    return modificato !== undefined ? modificato : (originale ?? '');
+}
+
+
+function summary(d) {
+
+    const w = d.welcome || {};
+    const c = w.contatto || {};
+    const p = d.pricing || {};
+    const overrides = d.__contractOverrides || {};
+
+    // Restituisce il valore definitivo utilizzato nel contratto.
+    // Rispetta anche i campi svuotati intenzionalmente.
+    function finale(campo, originale = '') {
+        return Object.prototype.hasOwnProperty.call(overrides, campo)
+            ? overrides[campo]
+            : (originale ?? '');
+    }
+
+    const base = {
+
+        numero_offerta: w.numeroOfferta || '',
+        numero_opportunita: w.numeroOpportunita || '',
+        numero_ordine: w.numeroOrdine || '',
+
+        // ANAGRAFICA DEFINITIVA
+        cliente: finale('Il cliente', c.nome),
+        partita_iva: finale('Partita IVA', c.vatValue),
+        indirizzo: finale('Sede Legale', c.indirizzo),
+        citta: finale('Città', c.citta),
+        cap: finale('CAP', c.cap),
+        telefono: finale('Telefono', c.telefono),
+        cellulare: finale('Cellulare', c.altroTelefono),
+        email: finale('Email', c.email),
+
+        // VEICOLO DEFINITIVO
+        modello: finale('Modello', w.modello),
+        van: d.van || '',
+        passo: finale('Passo', passoValue(d)),
+        colore: finale(
+            'Colore',
+            sectionValue(d.detailsPrintList?.colore)
+        ),
+        quantita: finale(
+            'Propone a SOCOM NUOVA SRL ordine per n veicoli',
+            w.quantita
+        ),
+
+        // VENDITORE E DATA DEFINITIVI
+        venditore: finale('Venditore', w.responsabile),
+        data_offerta: finale('Napoli lì', w.today),
+
+        // PREZZI ORIGINALI DELL'OFFERTA
+        prezzo_totale_netto: p.prezzoTotaleDaPagareNetValue ?? '',
+        prezzo_totale_lordo: p.prezzoTotaleDaPagareGrossValue ?? '',
+
+        // NOTE DEFINITIVE
+        note_aggiuntive: d.__contractNotes || ''
+    };
+
+    // Conserva anche tutti i campi della maschera,
+    // compresi pagamento, permuta, consegna, ecc.
+    for (const [campo, valore] of Object.entries(overrides)) {
+        base['contratto_' + campo] = valore;
+    }
+
+    return csv([
+        Object.keys(base),
+        Object.values(base)
+    ]);
+}
+
 function details(d){const rows=[['numero_offerta','tipo','gruppo','codice','descrizione','prezzo_lordo','prezzo_netto','stato']];const num=d.welcome?.numeroOfferta||'';const dp=d.detailsPrintList||{};for(const group of dp.pack?.group||[])for(const x of group.carList||[])rows.push([num,'pacchetto',group.groupname||group.group||'',x.codiceUnivoco||x.codice||'',x.descrizioneCustom||x.valore||'',x.prezzoLordo||'',x.prezzoNetto||'',x.status||'']);for(const chapter of dp.fcsuserselected?.fcsCar?.capitoloList||[])for(const sub of chapter.sottoCapitoloList||[])for(const x of sub.caratteristiche||[])rows.push([num,'optional',chapter.descrizione||'',x.codiceUnivoco||x.codice||'',x.descrizioneCustom||x.valore||'',x.prezzoLordo||'',x.prezzoNetto||'',x.status||'']);for(const x of d.pricing?.otherCosts||[])rows.push([num,'lavorazione',x.name||'',x.id||'',x.descrizione||'',x.listPrice??'',x.customerFinalPrice??'',x.status||'']);if(d.__contractNotes)rows.push([num,'nota_venditore','','',d.__contractNotes,'','','']);return csv(rows)}
 function full(d){const w=d.welcome||{};return JSON.stringify({schema:'dealup-contract-min-v2',exportedAt:new Date().toISOString(),numeroOfferta:w.numeroOfferta||'',numeroOpportunita:w.numeroOpportunita||'',cliente:w.contatto?.nome||'',modello:w.modello||'',van:d.van||'',venditore:w.responsabile||'',contratto:{campi:d.__contractOverrides||{},noteAggiuntive:d.__contractNotes||''}})}
 function save(name,content,mime){const blob=new Blob([content],{type:mime});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),15000)}
