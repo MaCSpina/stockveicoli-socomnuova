@@ -3,6 +3,6 @@
   <app appid="knkobljbgnhinkjpeoiplgllmngnojkl">
     <updatecheck
       codebase="https://stockveicoli.socomnuova.com/extensions/dealup/dealup.crx"
-      version="0.7.3" />
+      version="0.7.4" />
   </app>
 </gupdate>
