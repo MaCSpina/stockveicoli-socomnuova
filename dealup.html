@@ -159,6 +159,39 @@ document.getElementById('refresh').onclick=()=>refresh(true);document.getElement
    ? 'http://127.0.0.1:8787'
    : 'https://dealup-upload.massy-spina.workers.dev';
  let rows=[],loading=false,complete=false,loaded=false;
+  // Stato delle richieste di importazione, indicizzato per contratto e upload.
+  const importStatuses=new Map();
+  function importKey(r){return String(r.offerId||'').toUpperCase()+'|'+String(r.uploadId||'').toLowerCase();}
+  async function refreshImportStatuses(){
+    const data=await request('/import/status');
+    importStatuses.clear();
+    for(const job of (data.jobs||[]))importStatuses.set(importKey(job),job);
+  }
+  async function requestImport(r,button){
+    if(!confirm('Richiedere l’importazione in Infinity del contratto '+r.offerId+'?\n\nPer ora viene soltanto registrata la richiesta su GitHub.'))return;
+    button.disabled=true;
+    button.textContent='Invio richiesta...';
+    try{
+      const token=sessionStorage.getItem('dealupSessionToken');
+      if(!token)throw Error('Sessione scaduta: accedi nuovamente');
+      const response=await fetch(api+'/import/request',{
+        method:'POST',cache:'no-store',
+        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({offerId:r.offerId,uploadId:r.uploadId})
+      });
+      const data=await response.json();
+      if(!response.ok||!data.ok)throw Error(data.error||'Errore HTTP '+response.status);
+      importStatuses.set(importKey(r),{offerId:r.offerId,uploadId:r.uploadId,status:data.status,message:data.message||''});
+      window.dealupLog('Richiesta importazione Infinity','OK',{welcome:{numeroOfferta:r.offerId}},data.created?'Richiesta registrata':'Richiesta già presente');
+      draw();
+      alert(data.created?'Richiesta registrata su GitHub. Nessuna importazione eseguita.':'Questo contratto ha già una richiesta di importazione.');
+    }catch(err){
+      window.dealupLog('Richiesta importazione Infinity','ERRORE',{welcome:{numeroOfferta:r.offerId}},err.message);
+      alert('Errore richiesta importazione: '+err.message);
+      draw();
+    }
+  }
+
   let pendingReload=false;
  function decode64(s){const raw=atob(s.replace(/\s/g,''));return new TextDecoder('utf-8').decode(Uint8Array.from(raw,c=>c.charCodeAt(0)));}
  function parseCSV(s){s=s.replace(/^\uFEFF/,'');const out=[];let row=[],cell='',quoted=false;for(let i=0;i<s.length;i++){const c=s[i];if(c==='"'){if(quoted&&s[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}else if(c===';'&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&s[i+1]==='\n')i++;row.push(cell);out.push(row);row=[];cell='';}else cell+=c;}if(cell||row.length){row.push(cell);out.push(row);}return out;}
