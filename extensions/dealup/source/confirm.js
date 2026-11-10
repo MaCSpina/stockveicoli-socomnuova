@@ -74,7 +74,11 @@
       note.style.cssText = 'font-size:12px;margin-top:10px;color:#a22';
       root.append(note);
       document.documentElement.append(root);
-      no.onclick = () => {root.remove(); active = false; next();};
+      no.onclick = () => {
+        // Il rinvio vale solo per questa acquisizione, non per le stampe future.
+        if (handled.get(id) === sig) handled.delete(id);
+        root.remove(); active = false; next();
+      };
       yes.onclick = async () => {
         no.disabled = yes.disabled = true;
         try {
