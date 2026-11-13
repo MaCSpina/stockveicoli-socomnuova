@@ -51,16 +51,14 @@ function extraNote(data){
   const costs=Array.isArray(data.pricing?.otherCosts)?data.pricing.otherCosts:[];
   const rows=[];
   for(const cost of costs){
-    if(!cost||cost.abilitato===false||cost.showItem===false)continue;
-    const description=String(cost.descrizione||'').trim();
-    if(!description)continue;
-    const heading=String(cost.name||'Lavorazioni aggiuntive').trim();
-    rows.push(heading.toUpperCase()+': '+description.replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
+    if(!cost||cost.abilitato===false||cost.showItem===false||cost.status==='REMOVED')continue;
+    const label=String(cost.name||cost.descrizione||'').trim();
+    if(label)rows.push(label.replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
   }
-  return rows;
+  return [...new Set(rows)];
 }
 function noteLines(data,font){
-  const rows=extraNote(data);if(data.__contractNotes)rows.push("NOTE AGGIUNTIVE: "+String(data.__contractNotes).replace(/\r\n?/g,"\n").split("\n").map(x=>x.trim()).filter(Boolean).join("; "));const widths=[440,515,515,515],lines=['','','',''];
+  const rows=extraNote(data);if(data.__contractNotes)rows.push(String(data.__contractNotes).replace(/\r\n?/g,"\n").split("\n").map(x=>x.trim()).filter(Boolean).join("; "));const widths=[440,515,515,515],lines=['','','',''];
   let index=0;
   for(const row of rows){
     // Ripartisce il testo su quattro campi, senza troncare le parole.
