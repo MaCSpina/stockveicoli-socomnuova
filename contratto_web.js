@@ -4,63 +4,21 @@ const $=id=>document.getElementById(id);
 function items(section){return (section?.group||[]).flatMap(g=>g.carList||[])}
 function parseMoney(v){if(typeof v==='number')return v;if(v==null)return null;let s=String(v).replace(/[€\s]/g,'');if(s.includes(',')&&s.includes('.'))s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');else if(s.includes(','))s=s.replace(',','.');let n=Number(s);return Number.isFinite(n)?n:null}
 function money(v){return v==null?'':new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v)}
-function opts(data){
-  const out=[];
-  // Pacchetti: riportare il nome commerciale del pacchetto, non ogni componente interno.
-  for(const group of data.detailsPrintList?.pack?.group||[]){
-    const name=String(group.groupname||group.group||'').trim();
-    if(name && (group.carList||[]).some(v=>!['DEFAULT_HIDE','REMOVED'].includes(v.status)))out.push('PACCHETTO '+name);
-  }
-  for(const c of data.detailsPrintList?.fcsuserselected?.fcsCar?.capitoloList||[])
-    for(const s of c.sottoCapitoloList||[])
-      for(const v of s.caratteristiche||[]){
-        if(['DEFAULT_HIDE','REMOVED'].includes(v.status))continue;
-        const d=String(v.descrizioneCustom||v.valore||'').trim();
-        const code=String(v.codiceUnivoco||v.codice||'').trim();
-        if(d)out.push((code+' '+d).trim());
-      }
-  return [...new Set(out)];
-}
-function optionLines(options,number,font){
-  // I pacchetti hanno priorità assoluta: non devono sparire se gli optional sono numerosi.
-  const widths=[470,505,315], lines=['','',''];
-  const packs=options.filter(v=>v.startsWith('PACCHETTO '));
-  const others=options.filter(v=>!v.startsWith('PACCHETTO '));
-  let omitted=0;
-  function add(value){
-    for(let i=0;i<3;i++){
-      const candidate=lines[i]?lines[i]+'; '+value:value;
-      if(font.widthOfTextAtSize(candidate,7.5)<=widths[i]){lines[i]=candidate;return true;}
-    }
-    return false;
-  }
-  for(const pack of packs)if(!add(pack))throw Error('Troppi pacchetti per i campi Optional del contratto');
-  for(const value of others)if(!add(value))omitted++;
-  if(omitted){
-    const notice='Altri optional: vedere offerta DealUp '+number;
-    if(!add(notice)){
-      // Riserva spazio all'avviso senza cancellare i pacchetti già inseriti.
-      for(let i=2;i>=0;i--){
-        if(lines[i] && !lines[i].includes('PACCHETTO ')){lines[i]=notice;break;}
-      }
-    }
-  }
-  return lines;
-}
+function opts(data){const out=[];for(const c of data.detailsPrintList?.fcsuserselected?.fcsCar?.capitoloList||[])for(const s of c.sottoCapitoloList||[])for(const v of s.caratteristiche||[]){if(['DEFAULT_HIDE','REMOVED'].includes(v.status))continue;const d=(v.descrizioneCustom||v.valore||'').trim(),code=(v.codiceUnivoco||v.codice||'').trim();if(d)out.push((code+' '+d).trim())}return [...new Set(out)]}
+function optionLines(options,number,font){const widths=[470,505,315],lines=['','',''];for(const value of options){let placed=false;for(let i=0;i<3;i++){const candidate=lines[i]?lines[i]+'; '+value:value;if(font.widthOfTextAtSize(candidate,7.5)<=widths[i]){lines[i]=candidate;placed=true;break}}if(!placed)return ['Optional come da offerta DealUp '+number+' allegata','','']}return lines}
 function extraNote(data){
   const costs=Array.isArray(data.pricing?.otherCosts)?data.pricing.otherCosts:[];
   const rows=[];
   for(const cost of costs){
-    if(!cost||cost.abilitato===false||cost.showItem===false)continue;
-    const description=String(cost.descrizione||'').trim();
-    if(!description)continue;
-    const heading=String(cost.name||'Lavorazioni aggiuntive').trim();
-    rows.push(heading.toUpperCase()+': '+description.replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
+    if(!cost||cost.abilitato===false||cost.showItem===false||cost.status==='REMOVED')continue;
+    // In DealUp la descrizione può essere null: il nome è la voce da riportare.
+    const label=String(cost.name||cost.descrizione||'').trim();
+    if(label)rows.push(label.replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
   }
-  return rows;
+  return [...new Set(rows)];
 }
 function noteLines(data,font){
-  const rows=extraNote(data);if(data.__contractNotes)rows.push("NOTE AGGIUNTIVE: "+String(data.__contractNotes).replace(/\r\n?/g,"\n").split("\n").map(x=>x.trim()).filter(Boolean).join("; "));const widths=[440,515,515,515],lines=['','','',''];
+  const rows=extraNote(data);if(data.__contractNotes)rows.push(String(data.__contractNotes).replace(/\r\n?/g,"\n").split("\n").map(x=>x.trim()).filter(Boolean).join("; "));const widths=[440,515,515,515],lines=['','','',''];
   let index=0;
   for(const row of rows){
     // Ripartisce il testo su quattro campi, senza troncare le parole.
