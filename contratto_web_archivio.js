@@ -51,32 +51,58 @@ function extraNote(data){
   const costs=Array.isArray(data.pricing?.otherCosts)?data.pricing.otherCosts:[];
   const rows=[];
   for(const cost of costs){
-    if(!cost||cost.abilitato===false||cost.showItem===false||cost.status==='REMOVED')continue;
-    const label=String(cost.name||cost.descrizione||'').trim();
-    if(label)rows.push(label.replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
+    if(!cost||cost.abilitato===false||cost.showItem===false)continue;
+    const description=String(cost.descrizione||'').trim();
+    if(!description)continue;
+    const heading=String(cost.name||'Lavorazioni aggiuntive').trim();
+    rows.push(heading.toUpperCase()+': '+description.replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
   }
-  return [...new Set(rows)];
+  return rows;
 }
-function noteLines(data,font){
-  const rows=extraNote(data);if(data.__contractNotes)rows.push(String(data.__contractNotes).replace(/\r\n?/g,"\n").split("\n").map(x=>x.trim()).filter(Boolean).join("; "));const widths=[440,515,515,515],lines=['','','',''];
-  let index=0;
-  for(const row of rows){
-    // Ripartisce il testo su quattro campi, senza troncare le parole.
-    const words=row.split(/\s+/).filter(Boolean);
-    for(const word of words){
-      let placed=false;
-      while(index<4){
-        const candidate=lines[index]?lines[index]+' '+word:word;
-        if(font.widthOfTextAtSize(candidate,8)<=widths[index]){lines[index]=candidate;placed=true;break;}
-        index++;
+function noteLines(data,font,form){
+  const rows=extraNote(data);
+  if(data.__contractNotes){
+    rows.push('NOTE AGGIUNTIVE: '+String(data.__contractNotes).replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
+  }
+  const lines=['','','',''];
+  if(!rows.length)return lines;
+  // Misura lo spazio reale dei quattro campi del modello PDF.
+  const widths=lines.map((_,i)=>{
+    const field=form.getTextField('Note e commenti '+(i+1));
+    return field.acroField.getWidgets()[0].getRectangle().width-5;
+  });
+  // Cerca prima il carattere piu' leggibile; scende solo se necessario.
+  for(let size=8;size>=4;size-=0.25){
+    const result=['','','',''];
+    let index=0,ok=true;
+    for(const row of rows){
+      // Separatore esplicito tra lavorazioni, senza sprecare un campo intero.
+      if(result.some(Boolean)) {
+        // Inserisce il separatore solo se puo' essere contenuto nel campo corrente.
+        const candidate=result[index]+';';
+        if(result[index] && font.widthOfTextAtSize(candidate,size)<=widths[index])result[index]=candidate;
       }
-      if(!placed)throw Error('Le lavorazioni aggiuntive superano lo spazio Note e commenti del contratto');
+      const tokens=row;
+      const words=tokens.trim().split(/\s+/).filter(Boolean);
+      for(let j=0;j<words.length;j++){
+        const word=words[j];
+        let placed=false;
+        while(index<4){
+          const candidate=result[index]?result[index]+' '+word:word;
+          if(font.widthOfTextAtSize(candidate,size)<=widths[index]){
+            result[index]=candidate;placed=true;break;
+          }
+          index++;
+        }
+        if(!placed){ok=false;break;}
+      }
+      if(!ok)break;
     }
-    index=Math.min(index+1,4);
+    if(ok)return result;
   }
-  return lines;
+  throw Error('Le lavorazioni aggiuntive e le note superano lo spazio disponibile nei quattro campi Note e commenti del contratto, anche con carattere minimo');
 }
-async function createContract(data){if(!window.PDFLib)throw Error('Libreria PDF non caricata. Verifica la connessione Internet o scarica pdf-lib.min.js in locale.');const response=await fetch('Modello_Contratto.pdf');if(!response.ok)throw Error('Modello_Contratto.pdf non trovato accanto a dealup.html');const doc=await PDFLib.PDFDocument.load(await response.arrayBuffer());const form=doc.getForm(),font=await doc.embedFont(PDFLib.StandardFonts.Helvetica);const w=data.welcome||{},client=w.contatto||{},details=data.detailsPrintList||{},pricing=data.pricing||{},calc=pricing.printOutPriceCalculation||{};const number=String(w.numeroOfferta||'').trim();if(!number)throw Error('Numero offerta mancante');const qty=Number(w.quantita||1);if(!Number.isInteger(qty)||qty<1)throw Error('Quantità non valida');let total=parseMoney(pricing.prezzoTotaleDaPagareNetValue);if(total===null)total=parseMoney(calc.summaryTotalOfferQuote?.customerFinalPrice);if(total===null)throw Error('Prezzo netto totale mancante: verifica l’offerta');const unit=total/qty;const fcp=Object.fromEntries(items(details.fcp).map(v=>[String(v.idCaratteristica),v]));const first=section=>items(section).find(v=>v.descrizioneCustom||v.valore)||{};const passo=fcp.WB||{};const citta=(client.citta||'').trim(),prov=(client.provincia||'').trim();const city=prov.length===2&&!citta.toUpperCase().includes(prov.toUpperCase())?citta+' ('+prov.toUpperCase()+')':citta;const lines=optionLines(opts(data),number,font);const notes=noteLines(data,font);const values={
+async function createContract(data){if(!window.PDFLib)throw Error('Libreria PDF non caricata. Verifica la connessione Internet o scarica pdf-lib.min.js in locale.');const response=await fetch('Modello_Contratto.pdf');if(!response.ok)throw Error('Modello_Contratto.pdf non trovato accanto a dealup.html');const doc=await PDFLib.PDFDocument.load(await response.arrayBuffer());const form=doc.getForm(),font=await doc.embedFont(PDFLib.StandardFonts.Helvetica);const w=data.welcome||{},client=w.contatto||{},details=data.detailsPrintList||{},pricing=data.pricing||{},calc=pricing.printOutPriceCalculation||{};const number=String(w.numeroOfferta||'').trim();if(!number)throw Error('Numero offerta mancante');const qty=Number(w.quantita||1);if(!Number.isInteger(qty)||qty<1)throw Error('Quantità non valida');let total=parseMoney(pricing.prezzoTotaleDaPagareNetValue);if(total===null)total=parseMoney(calc.summaryTotalOfferQuote?.customerFinalPrice);if(total===null)throw Error('Prezzo netto totale mancante: verifica l’offerta');const unit=total/qty;const fcp=Object.fromEntries(items(details.fcp).map(v=>[String(v.idCaratteristica),v]));const first=section=>items(section).find(v=>v.descrizioneCustom||v.valore)||{};const passo=fcp.WB||{};const citta=(client.citta||'').trim(),prov=(client.provincia||'').trim();const city=prov.length===2&&!citta.toUpperCase().includes(prov.toUpperCase())?citta+' ('+prov.toUpperCase()+')':citta;const lines=optionLines(opts(data),number,font);const notes=noteLines(data,font,form);const values={
 'Napoli lì':w.today||'','Il cliente':client.nome||'','Sede Legale':client.indirizzo||'','Città':city,'CAP':client.cap||'','Partita IVA':client.vatValue||'','Telefono':client.telefono||'','Cellulare':client.altroTelefono||'','Email':client.email||'',
 'Propone a SOCOM NUOVA SRL ordine per n veicoli':String(qty),'Modello':w.modello||'','Passo':passo.descrizioneCustom||passo.valore||passo.codiceUnivoco||'','Colore':first(details.colore).descrizioneCustom||first(details.colore).valore||'','Allestimento 1':first(details.dealerbodies).descrizioneCustom||first(details.dealerbodies).valore||'','Optional 1':lines[0],'Optional 2':lines[1],'Optional 3':lines[2],'Configurazione CRM n':number,'Prezzo per veicolo iva esclusa €':money(unit),'Prezzo totale fornitura iva esclusa €':money(total),'Venditore':w.responsabile||'','Note e commenti 1':notes[0],'Note e commenti 2':notes[1],'Note e commenti 3':notes[2],'Note e commenti 4':notes[3]};
 Object.assign(values,data.__contractOverrides||{});
