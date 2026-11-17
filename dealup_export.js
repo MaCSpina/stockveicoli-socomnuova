@@ -2,6 +2,21 @@
 (()=>{'use strict';
 const sectionItems=s=>(s?.group||[]).flatMap(g=>g.carList||[]);
 const sectionValue=s=>{const v=sectionItems(s).find(x=>x.descrizioneCustom||x.valore||x.codiceUnivoco);return v?.descrizioneCustom||v?.valore||v?.codiceUnivoco||''};
+// Allestimenti presenti nell'offerta DealUp: una voce per ciascun elemento valido.
+const allestimentiImportati=d=>{
+ const sections=[d.detailsPrintList?.bodies,d.detailsPrintList?.dealerbodies];
+ const values=[];
+ for(const section of sections)for(const x of sectionItems(section)){
+  if(!x||['DEFAULT_HIDE','REMOVED'].includes(x.status))continue;
+  const v=String(x.descrizioneCustom||x.valore||x.descrizione||x.nome||x.codiceUnivoco||'').trim();
+  if(v&&!values.includes(v))values.push(v);
+ }
+ return values;
+};
+const allestimentoCampo=(d,n)=>{
+ const v=allestimentiImportati(d);
+ return n===1?v[0]||'':v.slice(1).join('; ');
+};
 const passoValue=d=>{const v=sectionItems(d.detailsPrintList?.fcp).find(x=>String(x.idCaratteristica)==='WB');return v?.descrizioneCustom||v?.valore||v?.codiceUnivoco||''};
 const specs=[
  ['Napoli lì','Data contratto',d=>d.welcome?.today],
@@ -23,8 +38,8 @@ const specs=[
  ['Modello','Modello',d=>d.welcome?.modello],
  ['Passo','Passo',passoValue],
  ['Colore','Colore',d=>sectionValue(d.detailsPrintList?.colore)],
- ['Allestimento 1','Allestimento 1',()=>'',true],
- ['Allestimento 2','Allestimento 2',()=>'',true],
+ ['Allestimento 1','Allestimento 1',d=>allestimentoCampo(d,1),true],
+ ['Allestimento 2','Allestimento 2',d=>allestimentoCampo(d,2),true],
  ['Venditore','Venditore',d=>d.welcome?.responsabile],
  ['Dropdown6','Modalità di pagamento',()=> ''],
  ['Deposito cauzionale iva esclusa €','Deposito cauzionale (IVA esclusa)',()=> ''],
@@ -57,10 +72,11 @@ function init(d){
   const group=document.createElement('section');group.className='form-section';
   const title=document.createElement('h3');title.textContent=section.title;group.append(title);
   const grid=document.createElement('div');grid.className='form-grid';
+  if(section.title==='ORDINE VEICOLO'){const info=document.createElement('div');info.className='span6';info.style.cssText='grid-column:1 / -1;font-size:12px;color:#203b5a';info.textContent='Allestimenti importati da DealUp: '+allestimentiImportati(d).length+' — puoi modificare liberamente i campi Allestimento 1 e 2.';grid.append(info)}
   for(const key of section.fields){
    const spec=byKey.get(key);if(!spec)continue;
    const [,label,fn]=spec;const el=document.createElement('label');el.className=spanFor(key);el.textContent=label;
-   const input=document.createElement(key==='Dropdown6'?'select':'input');input.dataset.field=key;
+   const input=document.createElement(key==='Dropdown6'?'select':key.startsWith('Allestimento ')?'textarea':'input');input.dataset.field=key;if(key.startsWith('Allestimento '))input.rows=2;
    if(key==='Dropdown6'){for(const value of ['', 'Contanti','Leasing (propria banca)','Leasing Iveco Capital','Altro (specificare in Note)']){const opt=document.createElement('option');opt.value=value;opt.textContent=value||'Seleziona modalità di pagamento';input.append(opt)}}else input.value=String(fn(d)??'');
    if(!input.value.trim()){if(key!=='Dropdown6')input.placeholder='Da compilare, se applicabile';input.classList.add('missing')}else input.classList.add('filled');
    input.addEventListener('input',()=>{input.classList.toggle('missing',!input.value.trim())});input.addEventListener('change',()=>input.classList.toggle('missing',!input.value.trim()));
@@ -74,9 +90,9 @@ function init(d){
  // Lavorazioni DealUp modificabili prima della generazione.
  const costs=Array.isArray(d.pricing?.otherCosts)?d.pricing.otherCosts:[];
  const imported=costs.map((x,index)=>({x,index})).filter(({x})=>x&&x.abilitato!==false&&x.showItem!==false);
- const caption=document.createElement('div');caption.className='span6';caption.style.gridColumn='1 / -1';caption.textContent='Lavorazioni importate da DealUp ('+imported.length+') — modificabili prima di generare il PDF';caption.style.cssText='font-size:12px;font-weight:700;color:#203b5a';grid.append(caption);
+ const caption=document.createElement('div');caption.className='span6';caption.style.gridColumn='1 / -1';caption.textContent='Altri costi importati da DealUp ('+imported.length+') — modificabili prima di generare il PDF';caption.style.cssText='font-size:12px;font-weight:700;color:#203b5a';grid.append(caption);
  for(const {x,index} of imported){
-  const label=document.createElement('label');label.className='span6';label.style.gridColumn='1 / -1';label.textContent='Lavorazione '+(index+1);
+  const label=document.createElement('label');label.className='span6';label.style.gridColumn='1 / -1';label.textContent='Altro costo '+(index+1);
   const t=document.createElement('textarea');t.rows=2;t.dataset.importedNote=String(index);
   const name=String(x.name||'').trim();
   const description=String(x.descrizione||'').replace(/\r\n?/g,'\n').split('\n').map(v=>v.trim()).filter(Boolean).join('; ');
@@ -86,7 +102,7 @@ function init(d){
  const label=document.createElement('label');label.className='span6';label.textContent='Altre note (senza prefisso automatico)';
  const t=document.createElement('textarea');t.rows=3;t.dataset.notes='1';t.placeholder='Scrivi qui eventuali altre note';label.append(t);grid.append(label);group.append(grid);box.append(group);
 }
-function prepared(){if(!original)throw Error('Seleziona un’offerta');const d=structuredClone(original),o={};for(const e of document.querySelectorAll('#editfields [data-field]')){if(e.value.trim())o[e.dataset.field]=e.value.trim()}d.__contractOverrides=o;
+function prepared(){if(!original)throw Error('Seleziona un’offerta');const d=structuredClone(original),o={};for(const e of document.querySelectorAll('#editfields [data-field]')){if(e.value.trim()||e.dataset.field.startsWith('Allestimento '))o[e.dataset.field]=e.value.trim()}d.__contractOverrides=o;
  // Riporta nel JSON di lavoro i testi modificati dall'utente, senza alterare l'offerta originale.
  for(const e of document.querySelectorAll('#editfields [data-imported-note]')){
   const i=Number(e.dataset.importedNote);
