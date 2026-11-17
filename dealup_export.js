@@ -71,6 +71,19 @@ function init(d){
  const group=document.createElement('section');group.className='form-section';
  const h=document.createElement('h3');h.textContent='NOTE E COMMENTI';group.append(h);
  const grid=document.createElement('div');grid.className='form-grid';
+ // Anteprima fedele delle lavorazioni che il generatore inserisce nel PDF.
+ const costs=Array.isArray(d.pricing?.otherCosts)?d.pricing.otherCosts:[];
+ const imported=costs.filter(x=>x&&x.abilitato!==false&&x.showItem!==false).map(x=>{
+  const name=String(x.name||'').trim();
+  const description=String(x.descrizione||'').replace(/\r\n?/g,'\n').split('\n').map(v=>v.trim()).filter(Boolean).join('; ');
+  return name&&description?name.toUpperCase()+': '+description:name?name.toUpperCase():description;
+ }).filter(Boolean);
+ const preview=document.createElement('div');preview.className='span6';preview.style.gridColumn='1 / -1';
+ const caption=document.createElement('div');caption.textContent='Lavorazioni importate da DealUp ('+imported.length+') — inserite automaticamente nel PDF';caption.style.cssText='font-size:12px;font-weight:700;margin-bottom:8px;color:#203b5a';preview.append(caption);
+ const panel=document.createElement('div');panel.style.cssText='padding:12px 14px;border:1px solid #cbd4df;background:#f5f8fc;border-radius:5px;line-height:1.6;font-size:13px;color:#1c293b';
+ if(imported.length){const ul=document.createElement('ul');ul.style.cssText='margin:0;padding-left:20px';for(const line of imported){const li=document.createElement('li');li.textContent=line;ul.append(li)}panel.append(ul)}
+ else panel.textContent='Nessuna lavorazione aggiuntiva importata.';
+ preview.append(panel);grid.append(preview);
  const label=document.createElement('label');label.className='span6';label.textContent='Note aggiuntive del venditore (si sommano alle lavorazioni DealUp)';
  const t=document.createElement('textarea');t.rows=4;t.dataset.notes='1';t.placeholder='Accordi particolari, annotazioni e altre lavorazioni';label.append(t);grid.append(label);group.append(grid);box.append(group);
 }
