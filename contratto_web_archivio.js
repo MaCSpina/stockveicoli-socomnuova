@@ -52,10 +52,10 @@ function extraNote(data){
   const rows=[];
   for(const cost of costs){
     if(!cost||cost.abilitato===false||cost.showItem===false)continue;
-    const description=String(cost.descrizione||'').trim();
-    if(!description)continue;
-    const heading=String(cost.name||'Lavorazioni aggiuntive').trim();
-    rows.push(heading.toUpperCase()+': '+description.replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
+    const name=String(cost.name||'').trim();
+    const description=String(cost.descrizione||'').replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; ');
+    if(!name&&!description)continue;
+    rows.push(name&&description?name.toUpperCase()+': '+description:name?name.toUpperCase():description);
   }
   return rows;
 }
