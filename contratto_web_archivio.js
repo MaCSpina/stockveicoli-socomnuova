@@ -62,7 +62,7 @@ function extraNote(data){
 function noteLines(data,font,form){
   const rows=extraNote(data);
   if(data.__contractNotes){
-    rows.push('NOTE AGGIUNTIVE: '+String(data.__contractNotes).replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
+    rows.push(String(data.__contractNotes).replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean).join('; '));
   }
   const lines=['','','',''];
   if(!rows.length)return lines;
